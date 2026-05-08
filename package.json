@@ -1,7 +1,7 @@
 {
   "name": "saturn-api",
   "version": "1.0.0",
-  "description": "Node.js API connected to Railway Postgres",
+  "description": "Saturn OS — purchase history sync + search API",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "pg": "^8.12.0"
+    "pg": "^8.12.0",
+    "fast-xml-parser": "^4.5.0",
+    "node-cron": "^3.0.3",
+    "csv-parse": "^5.5.6"
   }
 }
