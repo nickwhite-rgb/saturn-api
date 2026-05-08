@@ -1,0 +1,17 @@
+{
+  "name": "saturn-api",
+  "version": "1.0.0",
+  "description": "Node.js API connected to Railway Postgres",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}
