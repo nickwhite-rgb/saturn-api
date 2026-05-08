@@ -89,9 +89,13 @@ app.delete('/items/:id', async (req, res) => {
 });
 
 // --- AroFlo test endpoint -------------------------------------------------
-// Quick ping to confirm Railway can reach api.aroflo.com and our credentials work.
-// Visit: /test-aroflo                       (defaults to /purchaseorders)
-//        /test-aroflo?path=/purchaseorders  (override the AroFlo path)
+// AroFlo's API lives at https://api.aroflo.com/ and uses a "zone" query system.
+// You tell it WHAT to fetch via ?zone=purchaseorders (or tasks, clients, etc.)
+// and join related data via ?join=lineitems,task
+//
+// Visit: /test-aroflo                                 (defaults: zone=purchaseorders, join=lineitems, page=1)
+//        /test-aroflo?zone=tasks
+//        /test-aroflo?zone=purchaseorders&join=lineitems&page=2
 //
 // IMPORTANT: this endpoint will be removed once the real sync is built.
 app.get('/test-aroflo', async (req, res) => {
@@ -110,8 +114,19 @@ app.get('/test-aroflo', async (req, res) => {
     });
   }
 
-  const path = req.query.path || '/purchaseorders';
-  const url = `https://api.aroflo.com${path}?uencoded=${encodeURIComponent(u)}&pencoded=${encodeURIComponent(p)}&orgencoded=${encodeURIComponent(org)}`;
+  const zone = req.query.zone || 'purchaseorders';
+  const page = req.query.page || '1';
+  const join = req.query.join || 'lineitems';
+
+  const params = new URLSearchParams();
+  params.append('zone', zone);
+  params.append('page', page);
+  if (join) params.append('join', join);
+  params.append('uencoded', u);
+  params.append('pencoded', p);
+  params.append('orgencoded', org);
+
+  const url = `https://api.aroflo.com/?${params.toString()}`;
 
   try {
     const response = await fetch(url, { method: 'GET' });
@@ -124,12 +139,12 @@ app.get('/test-aroflo', async (req, res) => {
       body = await response.text();
     }
     // Redact credentials from any URL we echo back
-    const safeUrl = `https://api.aroflo.com${path}?uencoded=***&pencoded=***&orgencoded=***`;
+    const safeUrl = `https://api.aroflo.com/?zone=${zone}&page=${page}&join=${join}&uencoded=***&pencoded=***&orgencoded=***`;
     res.json({
       status,
       contentType,
       url: safeUrl,
-      body,
+      bodyPreview: typeof body === 'string' ? body.slice(0, 4000) : body,
     });
   } catch (err) {
     console.error('AroFlo test failed:', err);
