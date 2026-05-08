@@ -104,6 +104,7 @@ async function importCsv(csvText) {
       trim: true,
       bom: true,            // handle UTF-8 BOM if present
       relax_quotes: true,
+      relax_column_count: true, // accept summary/total rows at end of file
     });
 
     if (records.length === 0) {
@@ -133,6 +134,20 @@ async function importCsv(csvText) {
 
       // Skip rows with no PO number — likely a junk/total/blank row
       if (!row.po_number) {
+        skipped++;
+        continue;
+      }
+
+      // Skip empty/cancelled POs (no part info AND zero qty/price)
+      const hasPartInfo = row.part_no || row.description;
+      const hasValue = (row.qty && row.qty > 0) || (row.unit_price && row.unit_price > 0);
+      if (!hasPartInfo && !hasValue) {
+        skipped++;
+        continue;
+      }
+
+      // Skip "Total = ..." summary rows that AroFlo appends to the bottom
+      if (row.po_number && /^Total\s*=/i.test(row.po_number)) {
         skipped++;
         continue;
       }
