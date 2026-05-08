@@ -88,6 +88,55 @@ app.delete('/items/:id', async (req, res) => {
   }
 });
 
+// --- AroFlo test endpoint -------------------------------------------------
+// Quick ping to confirm Railway can reach api.aroflo.com and our credentials work.
+// Visit: /test-aroflo                       (defaults to /purchaseorders)
+//        /test-aroflo?path=/purchaseorders  (override the AroFlo path)
+//
+// IMPORTANT: this endpoint will be removed once the real sync is built.
+app.get('/test-aroflo', async (req, res) => {
+  const u = process.env.AROFLO_U_ENCODED;
+  const p = process.env.AROFLO_P_ENCODED;
+  const org = process.env.AROFLO_ORG_ENCODED;
+
+  if (!u || !p || !org) {
+    return res.status(500).json({
+      error: 'AroFlo credentials not set in Railway environment variables.',
+      missing: {
+        AROFLO_U_ENCODED: !u,
+        AROFLO_P_ENCODED: !p,
+        AROFLO_ORG_ENCODED: !org,
+      },
+    });
+  }
+
+  const path = req.query.path || '/purchaseorders';
+  const url = `https://api.aroflo.com${path}?uencoded=${encodeURIComponent(u)}&pencoded=${encodeURIComponent(p)}&orgencoded=${encodeURIComponent(org)}`;
+
+  try {
+    const response = await fetch(url, { method: 'GET' });
+    const contentType = response.headers.get('content-type') || '';
+    const status = response.status;
+    let body;
+    if (contentType.includes('application/json')) {
+      body = await response.json();
+    } else {
+      body = await response.text();
+    }
+    // Redact credentials from any URL we echo back
+    const safeUrl = `https://api.aroflo.com${path}?uencoded=***&pencoded=***&orgencoded=***`;
+    res.json({
+      status,
+      contentType,
+      url: safeUrl,
+      body,
+    });
+  } catch (err) {
+    console.error('AroFlo test failed:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Start server ---------------------------------------------------------
 app.listen(PORT, () => {
   console.log(`API listening on port ${PORT}`);
