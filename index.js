@@ -14,10 +14,17 @@ const fs = require('fs');
 const path = require('path');
 const db = require('./db');
 const sync = require('./sync');
+const auth = require('./auth');
 const { importCsv } = require('./import');
 
 const app = express();
 app.use(express.json());
+
+// All requests get req.user populated (or null if not logged in)
+app.use(auth.loadUser);
+
+// Bootstrap the first admin from ADMIN_INITIAL_PIN env var if no users exist
+auth.bootstrapAdmin().catch(err => console.error('[AUTH] bootstrap failed:', err));
 
 const PORT = process.env.PORT || 3000;
 
@@ -31,9 +38,147 @@ const UI_HTML = (() => {
   }
 })();
 
-// Search UI at root
+// Search UI at root (UI itself handles login state via /api/me)
 app.get('/', (req, res) => {
   res.type('html').send(UI_HTML);
+});
+
+// --- Auth endpoints ---------------------------------------------------------
+
+app.post('/api/login', async (req, res) => {
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  if (auth.rateLimited(ip)) {
+    return res.status(429).json({ error: 'Too many attempts. Try again in an hour.' });
+  }
+  const pin = String((req.body && req.body.pin) || '').trim();
+  if (!/^\d{6}$/.test(pin)) {
+    return res.status(400).json({ error: 'PIN must be 6 digits' });
+  }
+  try {
+    const result = await db.query(
+      `SELECT id, name, pin_hash, is_admin FROM users WHERE active = TRUE`
+    );
+    let matchedUser = null;
+    for (const u of result.rows) {
+      if (await auth.verifyPin(pin, u.pin_hash)) { matchedUser = u; break; }
+    }
+    if (!matchedUser) {
+      return res.status(401).json({ error: 'Invalid PIN' });
+    }
+    auth.clearRateLimit(ip);
+    await db.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [matchedUser.id]);
+    const token = auth.signToken({
+      uid: matchedUser.id,
+      exp: Date.now() + auth.SESSION_TTL_MS,
+    });
+    auth.setCookie(res, auth.COOKIE_NAME, token, { maxAge: auth.SESSION_TTL_MS });
+    res.json({
+      ok: true,
+      user: { id: matchedUser.id, name: matchedUser.name, is_admin: matchedUser.is_admin },
+    });
+  } catch (err) {
+    console.error('[LOGIN]', err);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+app.post('/api/logout', (req, res) => {
+  auth.clearCookie(res, auth.COOKIE_NAME);
+  res.json({ ok: true });
+});
+
+app.get('/api/me', (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  res.json({
+    id: req.user.id,
+    name: req.user.name,
+    email: req.user.email,
+    phone: req.user.phone,
+    is_admin: req.user.is_admin,
+  });
+});
+
+// --- Admin endpoints (require is_admin) -------------------------------------
+
+app.get('/api/admin/users', auth.requireAdmin, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, name, email, phone, is_admin, active, created_at, last_login_at
+         FROM users
+        ORDER BY active DESC, name`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/users', auth.requireAdmin, async (req, res) => {
+  const name = String((req.body && req.body.name) || '').trim();
+  const email = String((req.body && req.body.email) || '').trim() || null;
+  const phone = String((req.body && req.body.phone) || '').trim() || null;
+  const isAdmin = !!(req.body && req.body.is_admin);
+  if (!name) return res.status(400).json({ error: 'name is required' });
+  try {
+    const pin = auth.generatePin();
+    const pinHash = await auth.hashPin(pin);
+    const result = await db.query(
+      `INSERT INTO users (name, email, phone, pin_hash, is_admin, active)
+       VALUES ($1, $2, $3, $4, $5, TRUE)
+       RETURNING id, name, email, phone, is_admin, active, created_at`,
+      [name, email, phone, pinHash, isAdmin]
+    );
+    // Return the PIN ONCE — it's never retrievable again
+    res.json({ ok: true, user: result.rows[0], pin });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'A user with that name already exists' });
+    }
+    console.error('[ADMIN/CREATE]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/users/:id/reset-pin', auth.requireAdmin, async (req, res) => {
+  try {
+    const pin = auth.generatePin();
+    const pinHash = await auth.hashPin(pin);
+    const result = await db.query(
+      `UPDATE users SET pin_hash = $1 WHERE id = $2 RETURNING id, name`,
+      [pinHash, req.params.id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+    res.json({ ok: true, user: result.rows[0], pin });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/admin/users/:id', auth.requireAdmin, async (req, res) => {
+  const { active, is_admin } = req.body || {};
+  const fields = [];
+  const values = [];
+  let i = 1;
+  if (typeof active === 'boolean')   { fields.push(`active = $${i}`);   values.push(active);   i++; }
+  if (typeof is_admin === 'boolean') { fields.push(`is_admin = $${i}`); values.push(is_admin); i++; }
+  if (fields.length === 0) return res.status(400).json({ error: 'Nothing to update' });
+  values.push(req.params.id);
+  try {
+    const result = await db.query(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = $${i} RETURNING id, name, is_admin, active`,
+      values
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+    // Don't let the admin deactivate themselves
+    if (req.user.id === result.rows[0].id && result.rows[0].active === false) {
+      // revert
+      await db.query(`UPDATE users SET active = TRUE WHERE id = $1`, [result.rows[0].id]);
+      return res.status(400).json({ error: "You can't deactivate your own account" });
+    }
+    res.json({ ok: true, user: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // --- Health -----------------------------------------------------------------
@@ -48,7 +193,7 @@ app.get('/health', async (req, res) => {
 
 // --- AroFlo debug ping ------------------------------------------------------
 // Useful for sanity-checking endpoints, joins, etc. Not used in production paths.
-app.get('/test-aroflo', async (req, res) => {
+app.get('/test-aroflo', auth.requireAdmin, async (req, res) => {
   const u = process.env.AROFLO_U_ENCODED;
   const p = process.env.AROFLO_P_ENCODED;
   const org = process.env.AROFLO_ORG_ENCODED;
@@ -93,10 +238,10 @@ async function handleSyncRun(req, res) {
   }
 }
 // Accept both POST (proper) and GET (easy browser test)
-app.post('/sync/run', handleSyncRun);
-app.get('/sync/run', handleSyncRun);
+app.post('/sync/run', auth.requireAdmin, handleSyncRun);
+app.get('/sync/run', auth.requireAdmin, handleSyncRun);
 
-app.get('/sync/status', async (req, res) => {
+app.get('/sync/status', auth.requireAuth, async (req, res) => {
   try {
     const result = await db.query(
       `SELECT id, started_at, finished_at, status, trigger,
@@ -112,7 +257,7 @@ app.get('/sync/status', async (req, res) => {
 });
 
 // --- Purchases: search / sort / filter / paginate ---------------------------
-app.get('/purchases', async (req, res) => {
+app.get('/purchases', auth.requireAuth, async (req, res) => {
   const {
     search = '',
     supplier = '',
@@ -181,7 +326,7 @@ app.get('/purchases', async (req, res) => {
 });
 
 // --- Purchases: summary tiles -----------------------------------------------
-app.get('/purchases/stats', async (req, res) => {
+app.get('/purchases/stats', auth.requireAuth, async (req, res) => {
   try {
     const [pos, lines, spend, suppliers, lastSync] = await Promise.all([
       db.query(`SELECT COUNT(DISTINCT po_number) AS n FROM purchase_lines WHERE po_number IS NOT NULL`),
@@ -203,7 +348,7 @@ app.get('/purchases/stats', async (req, res) => {
 });
 
 // --- Filter dropdown options ------------------------------------------------
-app.get('/purchases/filters', async (req, res) => {
+app.get('/purchases/filters', auth.requireAuth, async (req, res) => {
   try {
     const [suppliers, categories] = await Promise.all([
       db.query(`SELECT DISTINCT supplier FROM purchase_lines WHERE supplier IS NOT NULL ORDER BY supplier`),
@@ -221,7 +366,7 @@ app.get('/purchases/filters', async (req, res) => {
 // --- CSV bulk import --------------------------------------------------------
 // Drag-and-drop browser page at /import — POSTs the CSV body to /import/csv.
 
-app.get('/import', (req, res) => {
+app.get('/import', auth.requireAdmin, (req, res) => {
   res.type('html').send(`<!doctype html>
 <html><head><meta charset="utf-8"><title>Saturn OS — CSV Import</title>
 <style>
@@ -280,7 +425,7 @@ app.get('/import', (req, res) => {
 </body></html>`);
 });
 
-app.post('/import/csv', express.text({ type: '*/*', limit: '200mb' }), async (req, res) => {
+app.post('/import/csv', auth.requireAdmin, express.text({ type: '*/*', limit: '200mb' }), async (req, res) => {
   const csv = req.body;
   if (!csv || typeof csv !== 'string' || csv.length === 0) {
     return res.status(400).json({ error: 'No CSV body received. POST text/csv content.' });

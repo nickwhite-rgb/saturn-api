@@ -12,15 +12,21 @@
   .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #e5e3da; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
   .brand { display: flex; align-items: center; gap: 12px; }
   .brand-mark { width: 32px; height: 32px; border-radius: 50%; background: #185FA5; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
+  .brand-mark.large { width: 56px; height: 56px; font-size: 22px; }
   .brand-text { font-size: 16px; font-weight: 500; }
   .crumb { color: #888; font-weight: 400; margin-left: 4px; }
-  .sync-row { display: flex; align-items: center; gap: 12px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
   .sync-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; }
   .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #1D9E75; }
+  .user-chip { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #444; padding: 6px 10px; background: #f1efe8; border-radius: 6px; }
+  .user-chip .role { font-size: 11px; padding: 1px 6px; background: #185FA5; color: white; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
   .btn { padding: 8px 14px; background: #fff; border: 1px solid #d3d1c7; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; }
   .btn:hover:not(:disabled) { background: #f1efe8; }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: #111; color: white; border-color: #111; }
+  .btn-primary:hover:not(:disabled) { background: #333; }
+  .btn-danger { color: #c1272d; border-color: #f7c1c1; }
 
   .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
   .search-row input { flex: 1; padding: 10px 14px; font-size: 14px; border: 1px solid #d3d1c7; border-radius: 6px; background: white; font-family: inherit; }
@@ -52,29 +58,80 @@
 
   .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 0 4px; font-size: 13px; color: #666; }
   .page-buttons { display: flex; gap: 6px; align-items: center; }
-  .page-buttons .page-info { padding: 0 8px; }
-
   .loading, .empty { text-align: center; padding: 60px 20px; color: #888; font-size: 13px; }
+
+  /* Login overlay */
+  .login-overlay { position: fixed; inset: 0; background: #f7f7f5; display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .login-box { background: white; border: 1px solid #e5e3da; border-radius: 12px; padding: 40px 36px; text-align: center; max-width: 360px; width: 90%; }
+  .login-box h1 { margin: 18px 0 4px; font-size: 22px; font-weight: 500; }
+  .login-box p { margin: 0 0 24px; color: #666; font-size: 14px; }
+  .pin-input { display: flex; justify-content: center; margin-bottom: 16px; }
+  .pin-input input { font-size: 28px; letter-spacing: 0.5em; padding: 14px; text-align: center; border: 1px solid #d3d1c7; border-radius: 8px; width: 220px; font-family: inherit; font-variant-numeric: tabular-nums; }
+  .pin-input input:focus { outline: 2px solid #185FA5; outline-offset: -2px; }
+  .login-error { color: #c1272d; font-size: 13px; min-height: 18px; }
+
+  /* Modal */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 90; padding: 20px; }
+  .modal { background: white; border-radius: 12px; padding: 24px; width: 100%; max-width: 720px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .modal-header h2 { margin: 0; font-size: 18px; font-weight: 500; }
+  .modal-close { background: none; border: 0; font-size: 22px; color: #888; cursor: pointer; padding: 0 4px; }
+
+  .user-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+  .user-table th, .user-table td { padding: 8px 10px; border-bottom: 1px solid #f4f3ee; text-align: left; }
+  .user-table th { background: #faf9f5; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+  .user-table .inactive { opacity: 0.5; }
+  .user-table .actions { display: flex; gap: 4px; }
+  .user-table .actions .btn { padding: 4px 10px; font-size: 12px; }
+
+  .add-user-form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; padding: 16px; background: #faf9f5; border-radius: 8px; margin-bottom: 16px; align-items: end; }
+  .add-user-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #666; }
+  .add-user-form input { padding: 8px 10px; font-size: 13px; border: 1px solid #d3d1c7; border-radius: 6px; font-family: inherit; }
+  .add-user-form .checkbox-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
+
+  .pin-reveal { padding: 16px; background: #FAEEDA; border: 1px solid #BA7517; border-radius: 8px; margin-bottom: 16px; }
+  .pin-reveal-label { font-size: 12px; color: #633806; margin-bottom: 4px; }
+  .pin-reveal-pin { font-size: 32px; font-weight: 500; letter-spacing: 0.4em; color: #412402; font-variant-numeric: tabular-nums; }
+  .pin-reveal-warn { font-size: 12px; color: #633806; margin-top: 6px; }
 
   @media (max-width: 700px) {
     .container { padding: 16px; }
     .stats { grid-template-columns: repeat(2, 1fr); }
     .filter-row select { min-width: 0; flex: 1; }
     .clear-btn { margin-left: 0; }
+    .add-user-form { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
-<div class="container">
+
+<!-- Login overlay (shown when not authenticated) -->
+<div class="login-overlay" id="login-overlay" style="display:none">
+  <div class="login-box">
+    <div class="brand-mark large" style="margin: 0 auto;">S</div>
+    <h1>Saturn OS</h1>
+    <p>Enter your 6-digit PIN</p>
+    <div class="pin-input">
+      <input type="password" inputmode="numeric" maxlength="6" pattern="[0-9]*" id="pin-field" autocomplete="off" />
+    </div>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- Main app (shown when authenticated) -->
+<div class="container" id="app" style="display:none">
 
   <div class="topbar">
     <div class="brand">
       <div class="brand-mark">S</div>
       <div><span class="brand-text">Saturn OS</span><span class="crumb">/ Purchase history</span></div>
     </div>
-    <div class="sync-row">
+    <div class="topbar-right">
       <div class="sync-status"><div class="sync-dot"></div><span id="sync-text">Loading…</span></div>
       <button class="btn" id="sync-btn">Sync now</button>
+      <button class="btn" id="admin-btn" style="display:none">Admin</button>
+      <div class="user-chip" id="user-chip"></div>
+      <button class="btn" id="logout-btn">Log out</button>
     </div>
   </div>
 
@@ -107,7 +164,7 @@
     <div class="table-scroll">
       <table>
         <thead>
-          <tr id="th-row">
+          <tr>
             <th data-col="date_invoiced" class="active">Date<span class="arrow">▼</span></th>
             <th data-col="po_number">PO #<span class="arrow">▼</span></th>
             <th data-col="supplier_invoice_no">Inv #<span class="arrow">▼</span></th>
@@ -137,16 +194,40 @@
 
 </div>
 
+<!-- Admin panel modal -->
+<div class="modal-bg" id="admin-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>User management</h2>
+      <button class="modal-close" id="admin-close">×</button>
+    </div>
+
+    <div id="pin-reveal-box" style="display:none"></div>
+
+    <h3 style="font-size:14px; font-weight:500; margin: 0 0 8px;">Add user</h3>
+    <div class="add-user-form" id="add-user-form">
+      <label>Name<input id="new-user-name" placeholder="e.g. Jack Beveridge" /></label>
+      <label>Email (optional)<input id="new-user-email" type="email" placeholder="jack@…" /></label>
+      <label>Phone (optional)<input id="new-user-phone" placeholder="04…" /></label>
+      <button class="btn btn-primary" id="create-user-btn">Create &amp; generate PIN</button>
+      <div class="checkbox-row">
+        <input type="checkbox" id="new-user-admin" /><label for="new-user-admin" style="margin:0; flex-direction:row;">Make admin</label>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px; font-weight:500; margin: 16px 0 8px;">All users</h3>
+    <table class="user-table" id="user-table">
+      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Last login</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="user-tbody"><tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
 <script>
 const state = {
-  search: '',
-  supplier: '',
-  category: '',
-  dateRange: '',
-  sort: 'date_invoiced',
-  direction: 'desc',
-  page: 1,
-  limit: 50,
+  search: '', supplier: '', category: '', dateRange: '',
+  sort: 'date_invoiced', direction: 'desc', page: 1, limit: 50,
+  user: null,
 };
 
 const $ = id => document.getElementById(id);
@@ -170,7 +251,72 @@ const fmtRelative = v => {
   if (hrs < 24) return hrs + 'h ago';
   return Math.floor(hrs / 24) + 'd ago';
 };
+function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+// ---- auth flow ----
+async function checkAuth() {
+  try {
+    const r = await fetch('/api/me');
+    if (r.status === 200) {
+      state.user = await r.json();
+      showApp();
+      return true;
+    }
+  } catch (err) { console.error(err); }
+  showLogin();
+  return false;
+}
+
+function showLogin() {
+  $('app').style.display = 'none';
+  $('login-overlay').style.display = 'flex';
+  setTimeout(() => $('pin-field').focus(), 50);
+}
+
+function showApp() {
+  $('login-overlay').style.display = 'none';
+  $('app').style.display = 'block';
+  $('user-chip').innerHTML = escapeHtml(state.user.name) + (state.user.is_admin ? ' <span class="role">admin</span>' : '');
+  $('admin-btn').style.display = state.user.is_admin ? '' : 'none';
+  loadFilters();
+  refresh();
+}
+
+async function attemptLogin(pin) {
+  $('login-error').textContent = '';
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin }),
+    });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      state.user = data.user;
+      showApp();
+    } else {
+      $('login-error').textContent = data.error || 'Invalid PIN';
+      $('pin-field').value = '';
+      setTimeout(() => $('pin-field').focus(), 50);
+    }
+  } catch (err) {
+    $('login-error').textContent = 'Login failed: ' + err.message;
+  }
+}
+
+$('pin-field').addEventListener('input', e => {
+  const v = e.target.value.replace(/\D/g, '').slice(0, 6);
+  e.target.value = v;
+  if (v.length === 6) attemptLogin(v);
+});
+
+$('logout-btn').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  state.user = null;
+  showLogin();
+});
+
+// ---- data loading (only runs when authed) ----
 function calcDateRange() {
   if (!state.dateRange) return { from: '', to: '' };
   const today = new Date();
@@ -188,9 +334,13 @@ function calcDateRange() {
 async function loadFilters() {
   try {
     const r = await fetch('/purchases/filters');
+    if (!r.ok) return;
     const data = await r.json();
     const supSel = $('supplier');
     const catSel = $('category');
+    // Reset (keep "All" option)
+    supSel.innerHTML = '<option value="">All suppliers</option>';
+    catSel.innerHTML = '<option value="">All categories</option>';
     (data.suppliers || []).forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; supSel.appendChild(o); });
     (data.categories || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
   } catch (err) { console.error('filters', err); }
@@ -199,6 +349,7 @@ async function loadFilters() {
 async function loadStats() {
   try {
     const r = await fetch('/purchases/stats');
+    if (!r.ok) return;
     const s = await r.json();
     $('stat-pos').textContent = (s.purchase_orders || 0).toLocaleString();
     $('stat-lines').textContent = (s.line_items || 0).toLocaleString();
@@ -224,6 +375,10 @@ async function loadResults() {
 
   try {
     const r = await fetch('/purchases?' + params.toString());
+    if (!r.ok) {
+      $('results-tbody').innerHTML = '<tr><td colspan="10" class="empty">Error loading results</td></tr>';
+      return;
+    }
     const data = await r.json();
     const rows = data.results || [];
     const tbody = $('results-tbody');
@@ -233,12 +388,12 @@ async function loadResults() {
       tbody.innerHTML = rows.map(r => `
         <tr>
           <td>${fmtDate(r.date_invoiced)}</td>
-          <td>${fmt(r.po_number)}</td>
-          <td>${fmt(r.supplier_invoice_no)}</td>
-          <td>${fmt(r.supplier)}</td>
-          <td>${fmt(r.part_no)}</td>
-          <td class="desc-cell">${fmt(r.description)}</td>
-          <td>${r.category ? '<span class="pill">' + fmt(r.category) + '</span>' : ''}</td>
+          <td>${escapeHtml(r.po_number)}</td>
+          <td>${escapeHtml(r.supplier_invoice_no)}</td>
+          <td>${escapeHtml(r.supplier)}</td>
+          <td>${escapeHtml(r.part_no)}</td>
+          <td class="desc-cell">${escapeHtml(r.description)}</td>
+          <td>${r.category ? '<span class="pill">' + escapeHtml(r.category) + '</span>' : ''}</td>
           <td class="num">${fmtQty(r.qty)}</td>
           <td class="num">${fmt2(r.unit_price)}</td>
           <td class="num">${fmt2(r.line_total)}</td>
@@ -265,57 +420,39 @@ async function loadResults() {
 
 function refresh() { loadStats(); loadResults(); }
 
+// ---- search/filter wiring ----
 let searchTimer;
 $('search').addEventListener('input', e => {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    state.search = e.target.value.trim();
-    state.page = 1;
-    loadResults();
-  }, 300);
+  searchTimer = setTimeout(() => { state.search = e.target.value.trim(); state.page = 1; loadResults(); }, 300);
 });
-
 ['supplier', 'category', 'date-range'].forEach(id => {
   $(id).addEventListener('change', e => {
     const key = id === 'date-range' ? 'dateRange' : id;
-    state[key] = e.target.value;
-    state.page = 1;
-    loadResults();
+    state[key] = e.target.value; state.page = 1; loadResults();
   });
 });
-
 $('clear-btn').addEventListener('click', () => {
   state.search = ''; state.supplier = ''; state.category = ''; state.dateRange = '';
   state.page = 1;
-  $('search').value = '';
-  $('supplier').value = '';
-  $('category').value = '';
-  $('date-range').value = '';
+  $('search').value = ''; $('supplier').value = ''; $('category').value = ''; $('date-range').value = '';
   loadResults();
 });
-
 document.querySelectorAll('th[data-col]').forEach(th => {
   th.addEventListener('click', () => {
     const col = th.dataset.col;
-    if (state.sort === col) {
-      state.direction = state.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-      state.sort = col;
-      state.direction = 'desc';
-    }
-    state.page = 1;
-    loadResults();
+    if (state.sort === col) state.direction = state.direction === 'asc' ? 'desc' : 'asc';
+    else { state.sort = col; state.direction = 'desc'; }
+    state.page = 1; loadResults();
   });
 });
-
 $('prev-btn').addEventListener('click', () => { if (state.page > 1) { state.page--; loadResults(); } });
 $('next-btn').addEventListener('click', () => { state.page++; loadResults(); });
 
 $('sync-btn').addEventListener('click', async () => {
   const btn = $('sync-btn');
   const orig = btn.textContent;
-  btn.textContent = 'Syncing…';
-  btn.disabled = true;
+  btn.textContent = 'Syncing…'; btn.disabled = true;
   try {
     const r = await fetch('/sync/run', { method: 'POST' });
     const result = await r.json();
@@ -325,7 +462,6 @@ $('sync-btn').addEventListener('click', async () => {
     } else {
       btn.textContent = 'Sync failed';
       setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
-      console.error(result);
     }
   } catch (err) {
     btn.textContent = 'Sync failed';
@@ -333,8 +469,114 @@ $('sync-btn').addEventListener('click', async () => {
   }
 });
 
-loadFilters();
-refresh();
+// ---- admin panel ----
+$('admin-btn').addEventListener('click', () => {
+  $('admin-modal').style.display = 'flex';
+  $('pin-reveal-box').style.display = 'none';
+  loadUsers();
+});
+$('admin-close').addEventListener('click', () => { $('admin-modal').style.display = 'none'; });
+
+async function loadUsers() {
+  try {
+    const r = await fetch('/api/admin/users');
+    if (!r.ok) { $('user-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Could not load users</td></tr>'; return; }
+    const users = await r.json();
+    const tbody = $('user-tbody');
+    if (users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No users yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr class="${u.active ? '' : 'inactive'}">
+        <td>${escapeHtml(u.name)}</td>
+        <td>${escapeHtml(u.email)}</td>
+        <td>${escapeHtml(u.phone)}</td>
+        <td>${u.is_admin ? 'Admin' : 'User'}</td>
+        <td>${u.last_login_at ? fmtDate(u.last_login_at) : '—'}</td>
+        <td>${u.active ? 'Active' : 'Disabled'}</td>
+        <td><div class="actions">
+          <button class="btn" data-act="reset" data-id="${u.id}">Reset PIN</button>
+          ${u.active ? `<button class="btn btn-danger" data-act="deactivate" data-id="${u.id}">Disable</button>` : `<button class="btn" data-act="activate" data-id="${u.id}">Enable</button>`}
+        </div></td>
+      </tr>
+    `).join('');
+    tbody.querySelectorAll('button[data-act]').forEach(b => b.addEventListener('click', userAction));
+  } catch (err) { console.error(err); }
+}
+
+async function userAction(e) {
+  const btn = e.currentTarget;
+  const id = btn.dataset.id;
+  const act = btn.dataset.act;
+  try {
+    if (act === 'reset') {
+      if (!confirm('Reset this user\'s PIN? Their old PIN will stop working.')) return;
+      const r = await fetch(`/api/admin/users/${id}/reset-pin`, { method: 'POST' });
+      const data = await r.json();
+      if (r.ok && data.ok) showPin(`New PIN for ${data.user.name}`, data.pin);
+      else alert(data.error || 'Failed');
+    } else if (act === 'deactivate') {
+      if (!confirm('Disable this user? They won\'t be able to log in.')) return;
+      const r = await fetch(`/api/admin/users/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: false }),
+      });
+      if (r.ok) loadUsers(); else alert((await r.json()).error || 'Failed');
+    } else if (act === 'activate') {
+      const r = await fetch(`/api/admin/users/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: true }),
+      });
+      if (r.ok) loadUsers(); else alert('Failed');
+    }
+  } catch (err) { alert('Error: ' + err.message); }
+}
+
+$('create-user-btn').addEventListener('click', async () => {
+  const name = $('new-user-name').value.trim();
+  if (!name) { alert('Name is required'); return; }
+  const body = {
+    name,
+    email: $('new-user-email').value.trim(),
+    phone: $('new-user-phone').value.trim(),
+    is_admin: $('new-user-admin').checked,
+  };
+  const btn = $('create-user-btn');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/admin/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      showPin(`PIN for ${data.user.name}`, data.pin);
+      $('new-user-name').value = ''; $('new-user-email').value = ''; $('new-user-phone').value = ''; $('new-user-admin').checked = false;
+      loadUsers();
+    } else {
+      alert(data.error || 'Failed to create user');
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function showPin(label, pin) {
+  const box = $('pin-reveal-box');
+  box.style.display = 'block';
+  box.className = 'pin-reveal';
+  box.innerHTML = `
+    <div class="pin-reveal-label">${escapeHtml(label)}</div>
+    <div class="pin-reveal-pin">${escapeHtml(pin)}</div>
+    <div class="pin-reveal-warn">Write this down or send it now — it won't be shown again. (You can always reset it later.)</div>
+  `;
+}
+
+// ---- init ----
+checkAuth();
 </script>
 </body>
 </html>
