@@ -10,6 +10,8 @@
 
 const express = require('express');
 const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
 const db = require('./db');
 const sync = require('./sync');
 const { importCsv } = require('./import');
@@ -18,6 +20,21 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
+
+// Load the search UI HTML at startup
+const UI_HTML = (() => {
+  try {
+    return fs.readFileSync(path.join(__dirname, 'ui.html'), 'utf8');
+  } catch (err) {
+    console.error('Failed to load ui.html:', err.message);
+    return '<h1>Saturn OS</h1><p>UI file missing — visit /health to verify the API is running.</p>';
+  }
+})();
+
+// Search UI at root
+app.get('/', (req, res) => {
+  res.type('html').send(UI_HTML);
+});
 
 // --- Health -----------------------------------------------------------------
 app.get('/health', async (req, res) => {

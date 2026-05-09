@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saturn OS — Purchase History</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f7f5; color: #111; margin: 0; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #e5e3da; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark { width: 32px; height: 32px; border-radius: 50%; background: #185FA5; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
+  .brand-text { font-size: 16px; font-weight: 500; }
+  .crumb { color: #888; font-weight: 400; margin-left: 4px; }
+  .sync-row { display: flex; align-items: center; gap: 12px; }
+  .sync-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #1D9E75; }
+
+  .btn { padding: 8px 14px; background: #fff; border: 1px solid #d3d1c7; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .btn:hover:not(:disabled) { background: #f1efe8; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .search-row input { flex: 1; padding: 10px 14px; font-size: 14px; border: 1px solid #d3d1c7; border-radius: 6px; background: white; font-family: inherit; }
+  .search-row input:focus { outline: 2px solid #185FA5; outline-offset: -2px; }
+
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+  .filter-row select { padding: 8px 12px; font-size: 13px; border: 1px solid #d3d1c7; border-radius: 6px; background: white; min-width: 160px; cursor: pointer; font-family: inherit; }
+  .clear-btn { margin-left: auto; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat { background: white; border: 1px solid #e5e3da; border-radius: 8px; padding: 14px 16px; }
+  .stat-label { font-size: 11px; color: #666; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 22px; font-weight: 500; margin: 0; font-variant-numeric: tabular-nums; }
+
+  .table-wrap { background: white; border: 1px solid #e5e3da; border-radius: 8px; overflow: hidden; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 12px 14px; background: #faf9f5; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; border-bottom: 1px solid #e5e3da; white-space: nowrap; cursor: pointer; user-select: none; }
+  th:hover { background: #f1efe8; color: #111; }
+  th.active { color: #185FA5; }
+  th .arrow { display: inline-block; margin-left: 4px; font-size: 9px; opacity: 0.4; }
+  th.active .arrow { opacity: 1; }
+  td { padding: 11px 14px; border-bottom: 1px solid #f4f3ee; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #faf9f5; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; background: #E6F1FB; color: #0C447C; }
+  .desc-cell { max-width: 320px; white-space: normal; }
+
+  .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 0 4px; font-size: 13px; color: #666; }
+  .page-buttons { display: flex; gap: 6px; align-items: center; }
+  .page-buttons .page-info { padding: 0 8px; }
+
+  .loading, .empty { text-align: center; padding: 60px 20px; color: #888; font-size: 13px; }
+
+  @media (max-width: 700px) {
+    .container { padding: 16px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .filter-row select { min-width: 0; flex: 1; }
+    .clear-btn { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div><span class="brand-text">Saturn OS</span><span class="crumb">/ Purchase history</span></div>
+    </div>
+    <div class="sync-row">
+      <div class="sync-status"><div class="sync-dot"></div><span id="sync-text">Loading…</span></div>
+      <button class="btn" id="sync-btn">Sync now</button>
+    </div>
+  </div>
+
+  <div class="search-row">
+    <input type="text" id="search" placeholder="Search part no, description, PO number, supplier invoice…" />
+  </div>
+
+  <div class="filter-row">
+    <select id="supplier"><option value="">All suppliers</option></select>
+    <select id="category"><option value="">All categories</option></select>
+    <select id="date-range">
+      <option value="">All time</option>
+      <option value="7">Last 7 days</option>
+      <option value="30">Last 30 days</option>
+      <option value="90">Last 90 days</option>
+      <option value="365">Last 12 months</option>
+      <option value="fy">This financial year</option>
+    </select>
+    <button class="btn clear-btn" id="clear-btn">Clear filters</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><p class="stat-label">Purchase orders</p><p class="stat-value" id="stat-pos">—</p></div>
+    <div class="stat"><p class="stat-label">Line items</p><p class="stat-value" id="stat-lines">—</p></div>
+    <div class="stat"><p class="stat-label">Total spend</p><p class="stat-value" id="stat-spend">—</p></div>
+    <div class="stat"><p class="stat-label">Suppliers</p><p class="stat-value" id="stat-suppliers">—</p></div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr id="th-row">
+            <th data-col="date_invoiced" class="active">Date<span class="arrow">▼</span></th>
+            <th data-col="po_number">PO #<span class="arrow">▼</span></th>
+            <th data-col="supplier_invoice_no">Inv #<span class="arrow">▼</span></th>
+            <th data-col="supplier">Supplier<span class="arrow">▼</span></th>
+            <th data-col="part_no">Part no<span class="arrow">▼</span></th>
+            <th data-col="description">Description<span class="arrow">▼</span></th>
+            <th data-col="category">Category<span class="arrow">▼</span></th>
+            <th class="num" data-col="qty">Qty<span class="arrow">▼</span></th>
+            <th class="num" data-col="unit_price">Unit $<span class="arrow">▼</span></th>
+            <th class="num" data-col="line_total">Line total<span class="arrow">▼</span></th>
+          </tr>
+        </thead>
+        <tbody id="results-tbody">
+          <tr><td colspan="10" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <span id="pagination-info">—</span>
+    <div class="page-buttons">
+      <button class="btn" id="prev-btn" disabled>Prev</button>
+      <button class="btn" id="next-btn" disabled>Next</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const state = {
+  search: '',
+  supplier: '',
+  category: '',
+  dateRange: '',
+  sort: 'date_invoiced',
+  direction: 'desc',
+  page: 1,
+  limit: 50,
+};
+
+const $ = id => document.getElementById(id);
+const fmt = v => v == null ? '' : String(v);
+const fmt2 = v => v == null ? '' : Number(v).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtQty = v => v == null ? '' : Number(v).toLocaleString('en-AU', { maximumFractionDigits: 2 });
+const fmtMoney = v => v == null ? '$0' : '$' + Number(v).toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const fmtDate = v => {
+  if (!v) return '';
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+};
+const fmtRelative = v => {
+  if (!v) return 'never';
+  const ms = Date.now() - new Date(v).getTime();
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return 'just now';
+  if (min < 60) return min + ' min ago';
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+};
+
+function calcDateRange() {
+  if (!state.dateRange) return { from: '', to: '' };
+  const today = new Date();
+  if (state.dateRange === 'fy') {
+    const fy = new Date(today.getFullYear(), 6, 1);
+    if (today < fy) fy.setFullYear(fy.getFullYear() - 1);
+    return { from: fy.toISOString().slice(0, 10), to: '' };
+  }
+  const days = parseInt(state.dateRange);
+  const from = new Date(today);
+  from.setDate(from.getDate() - days);
+  return { from: from.toISOString().slice(0, 10), to: '' };
+}
+
+async function loadFilters() {
+  try {
+    const r = await fetch('/purchases/filters');
+    const data = await r.json();
+    const supSel = $('supplier');
+    const catSel = $('category');
+    (data.suppliers || []).forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; supSel.appendChild(o); });
+    (data.categories || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
+  } catch (err) { console.error('filters', err); }
+}
+
+async function loadStats() {
+  try {
+    const r = await fetch('/purchases/stats');
+    const s = await r.json();
+    $('stat-pos').textContent = (s.purchase_orders || 0).toLocaleString();
+    $('stat-lines').textContent = (s.line_items || 0).toLocaleString();
+    $('stat-spend').textContent = fmtMoney(s.total_spend);
+    $('stat-suppliers').textContent = (s.suppliers || 0).toLocaleString();
+    $('sync-text').textContent = 'Last synced ' + fmtRelative(s.last_synced_at);
+  } catch (err) { console.error('stats', err); }
+}
+
+async function loadResults() {
+  $('results-tbody').innerHTML = '<tr><td colspan="10" class="loading">Loading…</td></tr>';
+  const params = new URLSearchParams();
+  if (state.search) params.set('search', state.search);
+  if (state.supplier) params.set('supplier', state.supplier);
+  if (state.category) params.set('category', state.category);
+  const range = calcDateRange();
+  if (range.from) params.set('from', range.from);
+  if (range.to) params.set('to', range.to);
+  params.set('sort', state.sort);
+  params.set('direction', state.direction);
+  params.set('page', state.page);
+  params.set('limit', state.limit);
+
+  try {
+    const r = await fetch('/purchases?' + params.toString());
+    const data = await r.json();
+    const rows = data.results || [];
+    const tbody = $('results-tbody');
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" class="empty">No results match your filters</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${fmtDate(r.date_invoiced)}</td>
+          <td>${fmt(r.po_number)}</td>
+          <td>${fmt(r.supplier_invoice_no)}</td>
+          <td>${fmt(r.supplier)}</td>
+          <td>${fmt(r.part_no)}</td>
+          <td class="desc-cell">${fmt(r.description)}</td>
+          <td>${r.category ? '<span class="pill">' + fmt(r.category) + '</span>' : ''}</td>
+          <td class="num">${fmtQty(r.qty)}</td>
+          <td class="num">${fmt2(r.unit_price)}</td>
+          <td class="num">${fmt2(r.line_total)}</td>
+        </tr>
+      `).join('');
+    }
+    const total = data.total || 0;
+    const start = total === 0 ? 0 : (state.page - 1) * state.limit + 1;
+    const end = Math.min(state.page * state.limit, total);
+    $('pagination-info').textContent = total === 0 ? 'No results' : `Showing ${start.toLocaleString()}–${end.toLocaleString()} of ${total.toLocaleString()}`;
+    $('prev-btn').disabled = state.page <= 1;
+    $('next-btn').disabled = end >= total;
+
+    document.querySelectorAll('th[data-col]').forEach(th => {
+      th.classList.toggle('active', th.dataset.col === state.sort);
+      const arrow = th.querySelector('.arrow');
+      if (arrow) arrow.textContent = (th.dataset.col === state.sort && state.direction === 'asc') ? '▲' : '▼';
+    });
+  } catch (err) {
+    $('results-tbody').innerHTML = '<tr><td colspan="10" class="empty">Error loading results</td></tr>';
+    console.error(err);
+  }
+}
+
+function refresh() { loadStats(); loadResults(); }
+
+let searchTimer;
+$('search').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    state.search = e.target.value.trim();
+    state.page = 1;
+    loadResults();
+  }, 300);
+});
+
+['supplier', 'category', 'date-range'].forEach(id => {
+  $(id).addEventListener('change', e => {
+    const key = id === 'date-range' ? 'dateRange' : id;
+    state[key] = e.target.value;
+    state.page = 1;
+    loadResults();
+  });
+});
+
+$('clear-btn').addEventListener('click', () => {
+  state.search = ''; state.supplier = ''; state.category = ''; state.dateRange = '';
+  state.page = 1;
+  $('search').value = '';
+  $('supplier').value = '';
+  $('category').value = '';
+  $('date-range').value = '';
+  loadResults();
+});
+
+document.querySelectorAll('th[data-col]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (state.sort === col) {
+      state.direction = state.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.sort = col;
+      state.direction = 'desc';
+    }
+    state.page = 1;
+    loadResults();
+  });
+});
+
+$('prev-btn').addEventListener('click', () => { if (state.page > 1) { state.page--; loadResults(); } });
+$('next-btn').addEventListener('click', () => { state.page++; loadResults(); });
+
+$('sync-btn').addEventListener('click', async () => {
+  const btn = $('sync-btn');
+  const orig = btn.textContent;
+  btn.textContent = 'Syncing…';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/sync/run', { method: 'POST' });
+    const result = await r.json();
+    if (result.ok) {
+      btn.textContent = 'Synced';
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; refresh(); }, 1500);
+    } else {
+      btn.textContent = 'Sync failed';
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
+      console.error(result);
+    }
+  } catch (err) {
+    btn.textContent = 'Sync failed';
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
+  }
+});
+
+loadFilters();
+refresh();
+</script>
+</body>
+</html>
