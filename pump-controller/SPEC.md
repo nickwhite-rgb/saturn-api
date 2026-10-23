@@ -67,7 +67,7 @@ With 2 pumps set:
 ### Protections (everything the E30 does, plus a few extras)
 | Protection | Trigger | Action |
 |---|---|---|
-| **Dry run** | Pump running and pressure doesn't reach Cut-in + margin within *Dry-run time*, or drops below *Dry-run pressure* while running | Pump off → auto retry |
+| **Dry run** | Pump running and pressure stays below *Dry-run pressure* for *Dry-run time* (catches both "never built pressure" and "lost water mid-run") | Pump off → auto retry |
 | **Auto retry** | After a dry-run trip | Retry after 10 min → 30 min → 60 min → every 60 min. Lock out after *Max retries* (0 = retry forever). |
 | **Rapid cycling** (leak / waterlogged tank) | More than *Max starts* within *Cycle window* | Alarm only, or lock out (setting) |
 | **Max run time** (burst pipe) | Pump runs continuously longer than *Max run time* | Pump off, lock out |
@@ -102,23 +102,38 @@ With 2 pumps set:
 - **Reset** button (clears a lockout)
 - **Manual run** (hold the button, with high-pressure cutout still active)
 
-## 3. Setup and monitoring
+## 3. Enclosure and environment (production unit)
+**Priority: functional, long-lasting and hard-wearing, not pretty.** Design for the worst case: full Queensland sun, heat, frost, dust and rain.
+
+| Item | Spec |
+|---|---|
+| Enclosure | Off-the-shelf **UV-stabilised polycarbonate**, **IP66**. Custom moulding only once volumes justify it. |
+| Colour | **Light grey RAL 7035** (reflects heat, standard industrial look) |
+| Sun hood | Over the top and the screen |
+| Cable entry | **Bottom only.** 3 × M20 glands (power, pump 1, pump 2), 1–2 × M16 (signals) |
+| Transducer | **M12 socket on the bottom of the box**, so the sensor is swapped without opening the enclosure |
+| Breather | IP-rated membrane vent to stop condensation pumping |
+| Electronics | Industrial temp-rated parts (−20 to +70 °C minimum), **conformal-coated** board |
+| Screen | **Monochrome transflective LCD**, wide-temp (−30 to +80 °C). Readable in direct sun, no fragile backlight dependency. Behind a hard-coated UV-resistant window. Shows pressure, pump state and fault code. |
+| Buttons | Sealed membrane or IP67 pushbuttons: Reset, Manual run, Setup (Bluetooth) |
+
+## 4. Setup and monitoring
 - **Bluetooth setup:** a QR sticker on each unit. Scan it in the app to connect, then pick the mode and adjust settings. No Wi-Fi needed on site.
 - **Wi-Fi (Stage 3):** live pressure, pump state, faults, start count and run hours in the app, with push alerts for faults.
 - **Logged on the unit:** last 50 faults, total starts, total run hours.
 
-## 4. Build stages
+## 5. Build stages
 1. **Bench prototype.** Buy an off-the-shelf industrial ESP32 board with a 4–20 mA input and relays, and write Mode 1. Test it on a bench rig (pump, tank, transducer, contactor). The Waveshare 7" screen can be the test display.
 2. **Field trial.** 3–5 units on friendly customers' sites.
 3. **App and cloud.** Bluetooth setup first, then remote monitoring.
 4. **Custom board and enclosure.** Cost-down for volume, and start the compliance (RCM) path if selling.
 
-## 5. Not in Stage 1
+## 6. Not in Stage 1
 - Other modes (tank fill, bore, timer, frost heater, VSD constant pressure). The board has the spare inputs and outputs for them.
 - Phone app (settings live in the code for the bench test)
 - Wi-Fi and cloud
 
-## 6. Decisions
+## 7. Decisions
 - [x] Phones: **iPhone and Android**
 - [x] Transducer range: **settable in the app**, two stock sensors (0–10 and 0–16 bar)
 - [x] Sensor plug: **M12 screw-on**
@@ -126,3 +141,5 @@ With 2 pumps set:
 - [x] Outputs: **4 relays**, 2 for pump contactors (5 A) and 2 for alarms
 - [x] Twin pump alternate / assist / failover: **yes**
 - [x] Rapid cycling default: **lock out**
+- [x] Screen: **monochrome transflective LCD** (hard-wearing over pretty)
+- [x] Enclosure: off-the-shelf UV-stable polycarbonate IP66, light grey, bottom-only glands (assumed, change if needed)
