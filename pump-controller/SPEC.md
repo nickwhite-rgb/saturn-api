@@ -93,7 +93,7 @@ With 2 pumps set:
 | Dry-run time | 30 s |
 | Max retries | 0 (retry forever) |
 | Max starts / Cycle window | 6 starts / 10 min |
-| Rapid-cycle action | Alarm only |
+| Rapid-cycle action | Lock out (alarm only is selectable) |
 | Max run time | 60 min |
 | High pressure cutout | 6.0 bar |
 
@@ -125,4 +125,4 @@ With 2 pumps set:
 - [x] Run/fault feedback inputs: **yes**, 6 digital inputs
 - [x] Outputs: **4 relays**, 2 for pump contactors (5 A) and 2 for alarms
 - [x] Twin pump alternate / assist / failover: **yes**
-- [ ] Rapid cycling default: alarm only or lock out?
+- [x] Rapid cycling default: **lock out**
