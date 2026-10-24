@@ -114,7 +114,7 @@ With 2 pumps set:
 | Transducer | **M12 socket on the bottom of the box**, so the sensor is swapped without opening the enclosure |
 | Breather | IP-rated membrane vent to stop condensation pumping |
 | Electronics | Industrial temp-rated parts (−20 to +70 °C minimum), **conformal-coated** board |
-| Screen | **Monochrome transflective LCD**, wide-temp (−30 to +80 °C). Readable in direct sun, no fragile backlight dependency. Behind a hard-coated UV-resistant window. Shows pressure, pump state and fault code. |
+| Screen | **Monochrome transflective LCD**, wide-temp (−20 to +70 °C operating is the common standard; the sun hood keeps it inside that). Readable in direct sun, no fragile backlight dependency. Behind a hard-coated UV-resistant window. Shows pressure, pump state and fault code. |
 | Buttons | Sealed membrane or IP67 pushbuttons: Reset, Manual run, Setup (Bluetooth) |
 
 ## 4. Setup and monitoring
