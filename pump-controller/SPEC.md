@@ -123,7 +123,7 @@ With 2 pumps set:
 - **Logged on the unit:** last 50 faults, total starts, total run hours.
 
 ## 5. Build stages
-1. **Bench prototype.** Buy an off-the-shelf industrial ESP32 board with a 4–20 mA input and relays, and write Mode 1. Test it on a bench rig (pump, tank, transducer, contactor). The Waveshare 7" screen can be the test display.
+1. **Bench prototype.** Eletechsup ES32D26 (ESP32, 24 V) test board, and write Mode 1. Test it on a bench rig (pump, tank, transducer, contactor). The Waveshare 7" screen can be the test display.
 2. **Field trial.** 3–5 units on friendly customers' sites.
 3. **App and cloud.** Bluetooth setup first, then remote monitoring.
 4. **Custom board and enclosure.** Cost-down for volume, and start the compliance (RCM) path if selling.

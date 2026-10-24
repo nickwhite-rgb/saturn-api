@@ -1,9 +1,10 @@
-// Saturn Pump Controller: bench prototype firmware for KinCony KC868-A6
-// Serial monitor 115200 baud. Commands:  r = reset   m = manual run on/off
+// Saturn Pump Controller: bench prototype firmware for Eletechsup ES32D26
+// Serial monitor 115200 baud. Commands:
+//   r = reset lockout    m = manual run on/off    t = self-test (pins/wiring)
 #include <Arduino.h>
 #include <Preferences.h>
-#include <Wire.h>
 
+#include "board_es32d26.h"
 #include "config.h"
 #include "pump_logic.h"
 
@@ -14,53 +15,59 @@ static Preferences prefs;
 static bool remoteLatch = true;  // for momentary start/stop buttons
 static bool serialManual = false;
 static bool serialReset = false;
-static float mAFiltered = 0;
-static bool i2cOk = true;
+static bool manualArmed = false;  // manual input must be seen OFF once after boot
+static float vFiltered = -1;
 
-// ---------- KC868-A6 I/O (PCF8574 expanders, active low) ----------
-static void writeRelays(const bool relay[6]) {
-  uint8_t b = 0xFF;  // 1 = off
-  for (int i = 0; i < 6; i++)
-    if (relay[i]) b &= ~(1 << i);
-  Wire.beginTransmission(ADDR_RELAYS);
-  Wire.write(b);
-  i2cOk = Wire.endTransmission() == 0;
-}
-
-// Returns true when each input contact is closed
-static bool readInputs(bool closed[6]) {
-  if (Wire.requestFrom(ADDR_INPUTS, (uint8_t)1) != 1) {
-    for (int i = 0; i < 6; i++) closed[i] = false;
-    return false;
-  }
-  uint8_t b = Wire.read();
-  for (int i = 0; i < 6; i++) closed[i] = !(b & (1 << i));
-  return true;
-}
-
-static float readMilliAmps() {
+static float readPinVolts(int pin) {
   uint32_t mv = 0;
-  for (int i = 0; i < 16; i++) mv += analogReadMilliVolts(PIN_PRESSURE);
-  float volts = (mv / 16.0f) / 1000.0f * A1_SCALE;
-  float mA = volts / SHUNT_OHMS * 1000.0f;
-  mAFiltered = mAFiltered == 0 ? mA : mAFiltered * 0.8f + mA * 0.2f;  // smooth noise
-  return mAFiltered;
+  for (int i = 0; i < 16; i++) mv += analogReadMilliVolts(pin);
+  return (mv / 16.0f) / 1000.0f;
 }
 
-static void i2cScan() {
-  Serial.print("I2C scan:");
-  bool in = false, out = false;
-  for (uint8_t a = 1; a < 127; a++) {
-    Wire.beginTransmission(a);
-    if (Wire.endTransmission() == 0) {
-      Serial.printf(" 0x%02X", a);
-      in |= a == ADDR_INPUTS;
-      out |= a == ADDR_RELAYS;
-    }
+// Pin volts -> loop mA, using the two-point calibration in config.h
+static float voltsToMilliAmps(float v) {
+  float barPerVolt = CAL_KNOWN_BAR / (CAL_V_KNOWN - CAL_V_ZERO);
+  float bar = (v - CAL_V_ZERO) * barPerVolt;
+  return 4.0f + bar / settings.rangeBar * 16.0f;
+}
+
+static float readPressureVolts() {
+  float v = readPinVolts(PIN_PRESSURE);
+  vFiltered = vFiltered < 0 ? v : vFiltered * 0.8f + v * 0.2f;  // smooth noise
+  return vFiltered;
+}
+
+// ---------- Self-test: confirms the board's pins on the bench ----------
+// Run it with the 240 V supply to the contactor coils switched OFF.
+static void selfTest() {
+  bool relay[8] = {false}, closed[8];
+  Serial.println("\n=== SELF-TEST (type any key to stop) ===");
+  Serial.println("Step 1: each relay clicks on for 1 s, in order 1 to 8.");
+  Serial.println("        Check the relay LED/click matches the number.");
+  for (int i = 0; i < 8; i++) {
+    for (int j = 0; j < 8; j++) relay[j] = j == i;
+    board::transfer(relay, closed);
+    Serial.printf("  Relay %d ON\n", i + 1);
+    delay(1000);
   }
-  Serial.println();
-  if (!in) Serial.println("!! Input chip not found - check ADDR_INPUTS / pins in config.h");
-  if (!out) Serial.println("!! Relay chip not found - check ADDR_RELAYS / pins in config.h");
+  for (int j = 0; j < 8; j++) relay[j] = false;
+  board::transfer(relay, closed);
+
+  Serial.println("Step 2: live readings. Close each input to GND in turn, then");
+  Serial.println("        put the transducer on CH1 and watch which pin's volts move.");
+  while (Serial.available()) Serial.read();
+  while (!Serial.available()) {
+    board::transfer(relay, closed);
+    Serial.print("  IN1-8: ");
+    for (int i = 0; i < 8; i++) Serial.print(closed[i] ? "X" : ".");
+    Serial.print("  | pin V:");
+    for (int i = 0; i < board::ADC_CANDIDATE_COUNT; i++)
+      Serial.printf(" %d=%.2f", board::ADC_CANDIDATES[i], readPinVolts(board::ADC_CANDIDATES[i]));
+    Serial.println();
+    delay(500);
+  }
+  while (Serial.available()) Serial.read();
+  Serial.println("=== SELF-TEST done, back to normal ===\n");
 }
 
 // ---------- Counters saved to flash (every 15 min if changed) ----------
@@ -87,17 +94,17 @@ static void saveCounters(uint32_t now) {
 }
 
 void setup() {
-  Wire.begin(PIN_SDA, PIN_SCL);
-  bool off[6] = {false};
-  writeRelays(off);  // all relays off straight away
+  board::begin();
+  bool off[8] = {false}, closed[8];
+  board::transfer(off, closed);  // all relays off straight away
 
   Serial.begin(115200);
   delay(200);
-  Serial.println("\n=== Saturn Pump Controller - Mode 1 (bench) ===");
-  i2cScan();
-  analogSetPinAttenuation(PIN_PRESSURE, ADC_11db);
+  Serial.println("\n=== Saturn Pump Controller - Mode 1 (bench, ES32D26) ===");
+  Serial.println("Commands: r = reset, m = manual run, t = self-test");
+  analogSetAttenuation(ADC_11db);
 
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 8; i++) {
     if (INPUT_MAP[i].fn == InFn::Pump1Running) settings.pumpFeedback[0] = true;
     if (INPUT_MAP[i].fn == InFn::Pump2Running) settings.pumpFeedback[1] = true;
   }
@@ -115,15 +122,24 @@ void loop() {
       serialManual = !serialManual;
       Serial.println(serialManual ? "Manual ON" : "Manual OFF");
     }
+    if (c == 't') {
+      bool off[8] = {false}, closed[8];
+      board::transfer(off, closed);
+      selfTest();
+      now = millis();
+    }
   }
 
-  // ---- Build inputs from the input map ----
-  bool closed[6];
-  bool inputsOk = readInputs(closed);
+  // ---- Read inputs ----
+  static bool relay[8] = {false};
+  bool closed[8];
+  board::transfer(relay, closed);
+
   Inputs in;
-  in.mA = readMilliAmps();
-  bool haveSwitch = false, switchOn = false;
-  for (int i = 0; i < 6; i++) {
+  float volts = readPressureVolts();
+  in.mA = voltsToMilliAmps(volts);
+  bool haveSwitch = false, switchOn = false, manualInput = false;
+  for (int i = 0; i < 8; i++) {
     bool active = closed[i] != INPUT_MAP[i].normallyClosed;
     switch (INPUT_MAP[i].fn) {
       case InFn::Pump1Running: in.running[0] = active; break;
@@ -135,29 +151,24 @@ void loop() {
       case InFn::RemoteStop: if (active) remoteLatch = false; break;
       case InFn::Float: in.tankOk = active; break;
       case InFn::Reset: in.reset |= active; break;
-      case InFn::Manual: in.manual |= active; break;
+      case InFn::Manual: manualInput |= active; break;
       case InFn::None: break;
     }
   }
-  // Stop always wins: a stop button press clears the latch even if the switch is on
+  // A manual input stuck on at power-up (wiring fault) is ignored until released
+  if (!manualInput) manualArmed = true;
+  in.manual = (manualArmed && manualInput) || serialManual;
   in.enable = remoteLatch && (!haveSwitch || switchOn);
   in.reset |= serialReset;
-  in.manual |= serialManual;
   serialReset = false;
-
-  // Can't read the input chip = treat as tank/pump fault, fail safe
-  if (!inputsOk) {
-    in.tankOk = false;
-  }
 
   Outputs out = ctrl.update(in, now);
 
-  bool relay[6] = {false};
   relay[0] = out.pump[0];
   relay[1] = out.pump[1];
   relay[2] = out.alarm;
-  relay[3] = !out.alarm && ctrl.state() != State::Lockout && i2cOk;  // healthy
-  writeRelays(relay);
+  relay[3] = !out.alarm && ctrl.state() != State::Lockout;  // system healthy
+  board::transfer(relay, closed);
 
   saveCounters(now);
 
@@ -165,13 +176,12 @@ void loop() {
   static uint32_t lastPrint = 0;
   if (now - lastPrint >= 1000) {
     lastPrint = now;
-    Serial.printf("%5.2f bar (%5.2f mA, %4.2f V) | %-16s | P1 %s P2 %s | lead P%d | %s",
-                  ctrl.pressure(), in.mA, in.mA * SHUNT_OHMS / 1000.0f,
-                  stateName(ctrl.state()), out.pump[0] ? "ON " : "off",
-                  out.pump[1] ? "ON " : "off", ctrl.lead() + 1, faultName(ctrl.fault()));
+    Serial.printf("%5.2f bar (%5.2f mA, pin %4.2f V) | %-16s | P1 %s P2 %s | lead P%d | %s",
+                  ctrl.pressure(), in.mA, volts, stateName(ctrl.state()),
+                  out.pump[0] ? "ON " : "off", out.pump[1] ? "ON " : "off", ctrl.lead() + 1,
+                  faultName(ctrl.fault()));
     uint32_t wait = ctrl.retryInMs(now);
     if (wait) Serial.printf(" | retry in %lu s", (unsigned long)(wait / 1000));
-    if (!inputsOk) Serial.print(" | !! INPUT CHIP NOT RESPONDING");
     Serial.println();
   }
 

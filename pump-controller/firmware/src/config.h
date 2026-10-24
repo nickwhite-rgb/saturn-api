@@ -54,30 +54,30 @@ struct InputCfg {
 };
 
 // Change what each input does here. Unused = InFn::None
-const InputCfg INPUT_MAP[6] = {
-  {InFn::Pump1Running, false},  // DI1
-  {InFn::Pump1Fault,   false},  // DI2
-  {InFn::Pump2Running, false},  // DI3
-  {InFn::Pump2Fault,   false},  // DI4
-  {InFn::RemoteSwitch, false},  // DI5
-  {InFn::Float,        false},  // DI6
+// Inputs are NPN opto-isolated: wire a volt-free contact between INx and GND.
+const InputCfg INPUT_MAP[8] = {
+  {InFn::Pump1Running, false},  // IN1
+  {InFn::Pump1Fault,   false},  // IN2
+  {InFn::Pump2Running, false},  // IN3
+  {InFn::Pump2Fault,   false},  // IN4
+  {InFn::RemoteSwitch, false},  // IN5
+  {InFn::Float,        false},  // IN6
+  {InFn::Reset,        false},  // IN7 (reset pushbutton)
+  {InFn::Manual,       false},  // IN8 (manual run pushbutton, hold)
 };
 
 // ---------- Outputs (relays) ----------
 // Relay 1 = Pump 1, Relay 2 = Pump 2, Relay 3 = Fault alarm,
-// Relay 4 = System healthy (on when everything is OK). Relays 5-6 spare.
+// Relay 4 = System healthy (on when everything is OK). Relays 5-8 spare.
 
-// ---------- KinCony KC868-A6 hardware ----------
-// Confirm these against your board revision. The I2C scan at start-up
-// prints what it finds.
-const int PIN_SDA = 4;
-const int PIN_SCL = 15;
-const uint8_t ADDR_INPUTS = 0x22;
-const uint8_t ADDR_RELAYS = 0x24;
-const int PIN_PRESSURE = 36;    // analogue input A1
+// ---------- Pressure transducer (4-20 mA into CH1) ----------
+// PIN: confirm with the self-test (`t`), then set it here.
+const int PIN_PRESSURE = 36;
 
-// 4-20 mA through a 250 ohm resistor = 1-5 V on A1.
-// CALIBRATE: put a known signal in (or measure volts at the A1 terminal)
-// and adjust until the serial monitor's "V" reading matches your meter.
-const float A1_SCALE = 5000.0f / 3300.0f;  // terminal volts per ADC volt
-const float SHUNT_OHMS = 250.0f;
+// CALIBRATION (two points, read the "pin V" value from the serial monitor):
+//  1. Transducer vented to air (0 bar)          -> CAL_V_ZERO
+//  2. Pressurise, read the gauge (e.g. 3.0 bar)  -> CAL_V_KNOWN at CAL_KNOWN_BAR
+// The defaults are a guess until you calibrate.
+const float CAL_V_ZERO = 0.40f;
+const float CAL_V_KNOWN = 1.00f;
+const float CAL_KNOWN_BAR = 3.0f;
