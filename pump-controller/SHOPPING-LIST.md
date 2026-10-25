@@ -28,6 +28,7 @@ This list is for **Stage 1 only**: a bench rig to prove the Mode 1 code. Hold of
 | IP65 DIN-rail enclosure, ~12 module | 1 | |
 | USB cable (to suit the ESP32 DevKitC, usually Type-C) | 1 | For loading the code |
 | ✅ ORDERED: **EQV LCD12864-06D Gray** (FSTN transflective, ST7565R, SPI, 3.0 V), see LCD-NOTES.md | 2 | ~AU$5–15 each. Bench version of the field screen. Avoid "ST7920" blue/yellow-green 5 V types. Production units come from Newhaven/RS/Mouser instead. |
+| 5-channel AD analogue key module, "3P Wire w Housing" (AliExpress) | 1 (+1 spare) | ~AU$6 each. Bench keypad: ▲ ▼ ► BACK ENTER on one signal wire. |
 | Optional: Waveshare 7" ESP32-S3 screen | 1 | Bench test display over RS485 |
 
 ## Rough budget

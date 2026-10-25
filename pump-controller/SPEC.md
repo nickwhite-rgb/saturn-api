@@ -115,7 +115,23 @@ With 2 pumps set:
 | Breather | IP-rated membrane vent to stop condensation pumping |
 | Electronics | Industrial temp-rated parts (−20 to +70 °C minimum), **conformal-coated** board |
 | Screen | **Monochrome transflective LCD**, wide-temp (−20 to +70 °C operating is the common standard; the sun hood keeps it inside that). Readable in direct sun, no fragile backlight dependency. Behind a hard-coated UV-resistant window. Shows pressure, pump state and fault code. |
-| Buttons | Sealed membrane or IP67 pushbuttons: Reset, Manual run, Setup (Bluetooth) |
+| Buttons | **5-button sealed membrane keypad** (UV-resistant, tactile, glove-friendly): **▲ ▼ ► ENTER BACK**. See section 3a. |
+
+## 3a. Keypad and menu (5 buttons)
+| Button | Normal use | Editing a value |
+|---|---|---|
+| ▲ / ▼ | Scroll menu items | Change the value up/down (hold = fast) |
+| ► | Next screen (Home → Pump 1 → Pump 2 → Faults → Info → Home) | Next digit |
+| ENTER | Open / select | Save |
+| BACK | Up one level / back to Home | Cancel without saving |
+
+Combos (so there are no extra holes in the box):
+- **Reset a lockout:** on the fault screen, hold **ENTER 3 s**
+- **Manual run:** hold **▲ + ENTER** together (runs while held, still stops on high pressure)
+- **Bluetooth setup mode:** hold **BACK 5 s**
+- Settings menu is PIN-protected so farmers can view but not change settings.
+
+Bench: 5-channel analogue "AD key" module (one signal wire). Layout: diamond = ▲ ▼ ► BACK (left position), side button = ENTER.
 
 ## 4. Setup and monitoring
 - **Bluetooth setup:** a QR sticker on each unit. Scan it in the app to connect, then pick the mode and adjust settings. No Wi-Fi needed on site.
