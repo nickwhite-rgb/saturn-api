@@ -27,6 +27,7 @@ This list is for **Stage 1 only**: a bench rig to prove the Mode 1 code. Hold of
 | Small pressure pump + pressure tank (an old E30 install off a job is ideal) | 1 | Real-world testing |
 | IP65 DIN-rail enclosure, ~12 module | 1 | |
 | USB cable (to suit the ESP32 DevKitC, usually Type-C) | 1 | For loading the code |
+| **128×64 FSTN transflective LCD, SPI, ST7567, 3.3 V** (AliExpress search: "12864 FSTN transflective SPI ST7567") | 2 | ~AU$5–15 each. Bench version of the field screen. Avoid "ST7920" blue/yellow-green 5 V types. Production units come from Newhaven/RS/Mouser instead. |
 | Optional: Waveshare 7" ESP32-S3 screen | 1 | Bench test display over RS485 |
 
 ## Rough budget
