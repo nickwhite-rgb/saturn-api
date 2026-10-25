@@ -5,7 +5,7 @@ This firmware is for the **Eletechsup ES32D26** test board (DC 24 V version). It
 ## 1. Flashing it (one-off setup, ~20 min)
 1. Install **VS Code** (free) and then the **PlatformIO** extension from inside VS Code.
 2. In VS Code: *File → Open Folder* → pick this `firmware` folder.
-3. Plug the ES32D26 into your PC with USB.
+3. Plug the **ESP32-DevKitC** into the ES32D26 socket (check it faces the right way, per the board's silkscreen), then plug the DevKitC's USB into your PC.
 4. Click the **→ (Upload)** arrow on the blue bar at the bottom.
 5. Click the **🔌 (Serial Monitor)** icon. You'll see a status line every second:
    ```
