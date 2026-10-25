@@ -1,0 +1,836 @@
+<title>Janux Bench Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: workbench — the controller face on the left, the simulated site (taps, faults, power) on the right; stacks on phones. */
+:root {
+  --bg: #eef0ec; --fg: #1b1f1c; --muted: #545c56; --line: #cfd4cd; --card: #ffffff;
+  --accent: #9a5b12; --good: #2f7d4a; --bad: #b3362b; --off: #c7ccc5;
+  --panel: #c9cdc8; --panel-edge: #aeb3ad; --bezel: #2b2f2c; --key: #2b2f2c; --key-fg: #e8ebe6; --enter: #1f5f8b;
+  --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #131615; --fg: #e4e7e2; --muted: #a2aaa3; --line: #2e3430; --card: #1c211f; --accent: #e0a24f; --good: #5fbf7f; --bad: #ef6b5f; --off: #3a413c; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #131615; --fg: #e4e7e2; --muted: #a2aaa3; --line: #2e3430; --card: #1c211f; --accent: #e0a24f; --good: #5fbf7f; --bad: #ef6b5f; --off: #3a413c; color-scheme: dark; }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 24px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 1.8rem; margin: 0; letter-spacing: .02em; text-wrap: balance; }
+.lede { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
+.bench { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.device { flex: 1 1 520px; min-width: 0; background: var(--panel); border-radius: 22px; box-shadow: inset 0 0 0 2px var(--panel-edge), 0 10px 30px rgba(0,0,0,.18); padding: 20px clamp(12px, 3vw, 30px) 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; color: #2b2f2c; }
+.brand { width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.brand b { font-family: var(--display); font-size: 1.3rem; letter-spacing: .32em; }
+.brand span { font-family: var(--display); font-size: .7rem; letter-spacing: .18em; color: #4a504b; }
+.bezel { background: var(--bezel); padding: clamp(8px, 2.2vw, 14px); border-radius: 10px; width: 100%; max-width: 540px; box-sizing: border-box; }
+canvas { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; image-rendering: pixelated; }
+.leds { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font: 600 .68rem var(--display); letter-spacing: .08em; color: #3a403b; }
+.led { display: inline-flex; align-items: center; gap: 6px; }
+.led i { width: 10px; height: 10px; border-radius: 50%; background: #9aa09a; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); }
+.led.on i { background: #3fd16b; box-shadow: 0 0 8px #3fd16b; }
+.led.alarm.on i { background: #ff5a3c; box-shadow: 0 0 8px #ff5a3c; }
+.keys { display: flex; align-items: center; gap: clamp(18px, 6vw, 52px); flex-wrap: wrap; justify-content: center; touch-action: none; user-select: none; -webkit-user-select: none; }
+.pad { display: grid; grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(3, 48px); gap: 6px; }
+.k, .enter { border: 0; cursor: pointer; font-family: var(--display); font-weight: 700; touch-action: none; -webkit-touch-callout: none; transition: transform .06s, box-shadow .06s; }
+.k { background: var(--key); color: var(--key-fg); border-radius: 10px; font-size: .78rem; letter-spacing: .06em; }
+.enter { width: 92px; height: 92px; border-radius: 50%; background: var(--enter); color: #fff; font-size: .85rem; letter-spacing: .1em; }
+.k.down, .enter.down { transform: translateY(2px) scale(.96); box-shadow: 0 0 0 3px #e0a24f; }
+.k:focus-visible, .enter:focus-visible { outline: 3px solid #e0a24f; outline-offset: 2px; }
+.hint { font-size: .78rem; color: #3a403b; text-align: center; max-width: 46ch; }
+.hint kbd { font: 600 .72rem var(--display); background: rgba(255,255,255,.55); border-radius: 4px; padding: 0 4px; }
+
+.site { flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.card h2 { font-family: var(--display); font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.row label { flex: 1; min-width: 0; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.tog { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.tog input { width: 18px; height: 18px; accent-color: var(--accent); }
+.tog small { color: var(--muted); display: block; font-size: .8rem; line-height: 1.3; }
+.gauge { font-family: var(--display); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.motors { display: flex; gap: 10px; flex-wrap: wrap; }
+.chip { font: 600 .78rem var(--body); border-radius: 999px; padding: 4px 10px; border: 1px solid var(--line); color: var(--muted); }
+.chip.on { border-color: var(--good); color: var(--good); }
+.chip.bad { border-color: var(--bad); color: var(--bad); }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn, .seg button { font: 500 .88rem var(--body); border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+.btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+.note { font-size: .82rem; color: var(--muted); margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Janux bench simulator</h1>
+    <p class="lede">Runs the same pump logic as the Janux firmware against a simulated pump, pressure tank and taps. Use the keypad to drive the menus, then open taps, cut the water, unplug the sensor or trip an overload and watch how the controller reacts.</p>
+  </header>
+
+  <div class="bench">
+    <section class="device" aria-label="Janux controller">
+      <div class="brand"><b>JANUX</b><span>PUMP &amp; SITE CONTROLLER</span></div>
+      <div class="bezel"><canvas id="lcd" width="512" height="256" role="img" aria-label="Controller screen"></canvas></div>
+      <div class="leds" aria-label="Relay outputs">
+        <span class="led" id="led-r1"><i></i>R1 PUMP 1</span>
+        <span class="led" id="led-r2"><i></i>R2 PUMP 2</span>
+        <span class="led alarm" id="led-r3"><i></i>R3 ALARM</span>
+        <span class="led" id="led-r4"><i></i>R4 AUX</span>
+      </div>
+      <div class="keys">
+        <div class="pad">
+          <span></span><button class="k" id="key-up" type="button" aria-label="Up">▲</button><span></span>
+          <button class="k" id="key-back" type="button" aria-label="Back">BACK</button><span></span><button class="k" id="key-right" type="button" aria-label="Next screen">▶</button>
+          <span></span><button class="k" id="key-down" type="button" aria-label="Down">▼</button><span></span>
+        </div>
+        <button class="enter" id="key-enter" type="button" aria-label="Enter">ENTER</button>
+      </div>
+      <p class="hint"><b>▶</b> next screen · <b>ENTER</b> open menu (PIN <b>1234</b>) · hold <b>ENTER 3 s</b> to reset a fault · hold <b>▲ + ENTER</b> for manual run. Keyboard: <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> <kbd>Enter</kbd> <kbd>Esc</kbd>.</p>
+    </section>
+
+    <aside class="site" aria-label="Simulated site">
+      <div class="card">
+        <h2>Site</h2>
+        <div class="row"><span>Actual pressure</span><span class="gauge" id="gauge">0 kPa</span></div>
+        <div class="motors"><span class="chip" id="m1">Pump 1 stopped</span><span class="chip" id="m2">Pump 2 stopped</span></div>
+        <div class="row"><label for="demand">Taps open: <b id="demandVal">35%</b></label></div>
+        <input type="range" id="demand" min="0" max="100" value="35">
+        <label class="tog"><input type="checkbox" id="water" checked><span>Water supply<small>Untick to make the pump run dry</small></span></label>
+        <label class="tog"><input type="checkbox" id="sensor" checked><span>Pressure sensor plugged in<small>Untick to simulate a frost-blown transducer</small></span></label>
+        <label class="tog"><input type="checkbox" id="float" checked><span>Tank float OK (IN6)</span></label>
+        <label class="tog"><input type="checkbox" id="remote" checked><span>Remote run switch (IN5)</span></label>
+      </div>
+      <div class="card">
+        <h2>Throw a fault</h2>
+        <label class="tog"><input type="checkbox" id="ol1"><span>Pump 1 overload tripped (IN2)</span></label>
+        <label class="tog"><input type="checkbox" id="ol2"><span>Pump 2 overload tripped (IN4)</span></label>
+        <label class="tog"><input type="checkbox" id="cf1"><span>Pump 1 contactor won't pull in<small>No running feedback on IN1</small></span></label>
+        <label class="tog"><input type="checkbox" id="cf2"><span>Pump 2 contactor won't pull in<small>No running feedback on IN3</small></span></label>
+      </div>
+      <div class="card">
+        <h2>Power and time</h2>
+        <div class="btns"><button class="btn" id="power" type="button">Power cycle</button></div>
+        <div class="row"><span>Sim speed</span>
+          <div class="seg" role="group" aria-label="Simulation speed">
+            <button type="button" data-speed="1" aria-pressed="true">1×</button>
+            <button type="button" data-speed="10" aria-pressed="false">10×</button>
+            <button type="button" data-speed="60" aria-pressed="false">60×</button>
+          </div>
+        </div>
+        <p class="note">Use 10× or 60× to watch the 10-minute dry-run retry or the 60-minute max-run timer play out.</p>
+      </div>
+      <p class="note">Simulation for training and design review. Pump curve, tank and timings are representative, not a specific install.</p>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+// =====================================================================
+//  1. CONTROLLER LOGIC — hand port of firmware/src/pump_logic.cpp
+// =====================================================================
+const A = { AnyFault: 1, HiLoLimit: 2, PumpOff: 4, PumpOn: 8, HighFault: 16, LowFault: 32, BatchDone: 64, AntiCycle: 128, PreStart: 256, SensorFault: 512, PumpFault: 1024, Healthy: 2048 };
+
+function defaultsFor(mode) {
+  const s = { mode, rangeKpa: 1000, units: 'kpa', startKpa: 200, stopKpa: 350, start2Kpa: 200, stop2Kpa: 350, tripKpa: 50, highLimitKpa: 600,
+    snapSetKpa: 300, snapDeltaKpa: 14, snapOnRising: false, powerUpDelayMs: 10000, preStartMs: 0, startupMs: 5000, runOnMs: 5000,
+    minRunMs: 10000, restartDelayMs: 5000, hpRunOnMs: 0, batchMs: 0, maxRunMs: 3600000, restart: 'Stepped', restartAfterMs: 600000,
+    maxRetries: 0, maxStartsPerHour: 0, startsInSequence: 5, antiCycleLockout: true, alternate: true, alternateEvery: 2,
+    pumpFeedback: [true, true], startConfirmMs: 3000, sensorFaultMs: 2000, alarmMask: A.AnyFault, auxMask: A.Healthy };
+  if (mode === 'Guard') { s.tripKpa = 100; s.highLimitKpa = 600; s.restart = 'Off'; s.maxRunMs = 0; }
+  if (mode === 'Snap') { s.tripKpa = 0; s.highLimitKpa = 0; s.restart = 'Off'; s.maxRunMs = 0; }
+  if (mode === 'Twin') { s.start2Kpa = 180; s.stop2Kpa = 350; }
+  return s;
+}
+
+function validate(s) {
+  if (s.mode === 'Pump' || s.mode === 'Twin') {
+    if (s.startKpa <= 0) return 'START CAN NOT BE ZERO.';
+    if (s.stopKpa <= s.startKpa) return 'STOP MUST BE HIGHER THAN START OR THE PUMP NEVER STOPS.';
+    if (s.tripKpa > 0 && s.startKpa <= s.tripKpa) return 'START MUST BE HIGHER THAN TRIP.';
+    if (s.mode === 'Twin') {
+      if (s.stop2Kpa <= s.start2Kpa) return 'P2 STOP MUST BE HIGHER THAN P2 START.';
+      if (s.tripKpa > 0 && s.start2Kpa <= s.tripKpa) return 'P2 START MUST BE HIGHER THAN TRIP.';
+    }
+    const top = s.mode === 'Twin' ? Math.max(s.stopKpa, s.stop2Kpa) : s.stopKpa;
+    if (s.highLimitKpa > 0 && s.highLimitKpa <= top) return 'HIGH LIMIT MUST BE HIGHER THAN STOP.';
+    if (s.batchMs && s.restart !== 'Off') return 'TIMED RUN NEEDS AUTO RESTART OFF.';
+  } else if (s.mode === 'Guard') {
+    if (s.highLimitKpa > 0 && s.highLimitKpa <= s.tripKpa) return 'HIGH TRIP MUST BE HIGHER THAN LOW TRIP.';
+  } else if (s.mode === 'Snap') {
+    if (s.snapDeltaKpa <= 0) return 'DIFFERENTIAL MUST BE MORE THAN ZERO.';
+  }
+  return null;
+}
+
+class Ctl {
+  constructor(s) {
+    this.s = s; this.state = 'PowerUp'; this.fault = 'None'; this.p = 0; this.sensorOk = false; this.sbt = false; this.sbs = 0;
+    this.booted = false; this.poweredUp = false; this.bootTime = 0; this.lastTick = 0;
+    this.lockedOut = false; this.lockFault = 'None'; this.dryWait = false; this.dryAt = 0; this.dryFault = 'DryRun'; this.retries = 0;
+    this.batchDone = false; this.acAlarm = false;
+    this.on = [false, false]; this.onSince = [0, 0]; this.pending = [false, false]; this.pendSince = [0, 0];
+    this.locked = [false, false]; this.lockPF = 'None'; this.lead = 0; this.alt = 0;
+    this.runStart = 0; this.startupDone = false; this.lastStop = 0; this.everStopped = false;
+    this.lowT = false; this.lowS = 0; this.hpT = false; this.hpS = 0;
+    this.lastStartAt = 0; this.anyStart = false; this.streak = 0; this.starts = [0, 0]; this.runMs = [0, 0];
+  }
+  pc() { return this.s.mode === 'Twin' ? 2 : 1; }
+  avail(i) { return i < this.pc() && !this.locked[i]; }
+  anyOn() { return this.on[0] || this.on[1]; }
+  retryDelay() {
+    if (this.s.restart === 'Stepped') return this.retries <= 1 ? 600000 : this.retries === 2 ? 1800000 : 3600000;
+    return this.s.restartAfterMs;
+  }
+  retryIn(now) { if (!this.dryWait) return 0; const g = now - this.dryAt, d = this.retryDelay(); return g >= d ? 0 : d - g; }
+  startsToAlt() { if (this.s.mode !== 'Twin' || !this.s.alternate) return 0; if (this.lead === 1) return 1; return Math.max(1, this.s.alternateEvery - 1 - this.alt); }
+  restartReady(now) { return !this.everStopped || now - this.lastStop >= this.s.restartDelayMs; }
+  startPump(i, now) { if (this.on[i]) return; this.on[i] = true; this.onSince[i] = now; this.pending[i] = false; this.starts[i]++; }
+  stopPump(i, now) { if (!this.on[i]) return; this.on[i] = false; if (!this.anyOn()) { this.lastStop = now; this.everStopped = true; this.lowT = false; this.hpT = false; } }
+  stopAll(now) { this.stopPump(0, now); this.stopPump(1, now); this.pending = [false, false]; }
+  requestStart(i, now) {
+    if (this.s.preStartMs === 0) { this.startPump(i, now); return true; }
+    if (!this.pending[i]) { this.pending[i] = true; this.pendSince[i] = now; return false; }
+    if (now - this.pendSince[i] >= this.s.preStartMs) { this.startPump(i, now); return true; }
+    return false;
+  }
+  lockout(f, now) { this.stopAll(now); this.lockedOut = true; this.lockFault = f; this.dryWait = false; this.state = 'Lockout'; this.fault = f; }
+  lockPump(i, now) {
+    if (this.locked[i]) return;
+    this.locked[i] = true; this.lockPF = i === 0 ? 'Pump1' : 'Pump2';
+    const was = this.on[i]; this.stopPump(i, now);
+    if (was && !this.anyOn()) { const o = 1 - i; if (this.avail(o)) { this.startPump(o, now); this.lead = o; } }
+    let any = false; for (let k = 0; k < this.pc(); k++) any = any || !this.locked[k];
+    if (!any) this.lockout(this.pc() === 1 ? this.lockPF : 'NoPumps', now);
+  }
+  recordStart(now) {
+    if (!this.s.maxStartsPerHour) return true;
+    const gap = 3600000 / this.s.maxStartsPerHour;
+    this.streak = this.anyStart && now - this.lastStartAt < gap ? this.streak + 1 : 1;
+    this.anyStart = true; this.lastStartAt = now;
+    if (this.streak >= this.s.startsInSequence) { if (this.s.antiCycleLockout) { this.lockout('AntiCycle', now); return false; } this.acAlarm = true; }
+    else if (this.streak === 1) this.acAlarm = false;
+    return true;
+  }
+  tripFault(f, now) {
+    this.stopAll(now); this.retries++;
+    const r = this.s.restart;
+    const lock = r === 'Off' || (r === 'Single' && this.retries > 1) || (r === 'Repeat' && this.s.maxRetries && this.retries > this.s.maxRetries);
+    if (lock) { this.lockout(f === 'DryRun' ? 'DryRunLockout' : f, now); return; }
+    this.dryWait = true; this.dryAt = now; this.dryFault = f; this.state = 'DryRunWait'; this.fault = f;
+  }
+  lowCheck(now) {
+    if (this.s.tripKpa <= 0) return false;
+    const f = this.s.mode === 'Guard' ? 'LowPressure' : 'DryRun';
+    if (!this.startupDone) {
+      const target = this.s.mode === 'Guard' ? this.s.tripKpa : this.s.startKpa;
+      if (this.p >= target) this.startupDone = true;
+      else if (now - this.runStart >= this.s.startupMs) { this.startupDone = true; if (this.p < this.s.tripKpa) { this.tripFault(f, now); return true; } }
+      return false;
+    }
+    if (this.p < this.s.tripKpa) {
+      if (!this.lowT) { this.lowT = true; this.lowS = now; }
+      if (now - this.lowS >= this.s.runOnMs) { this.tripFault(f, now); return true; }
+    } else this.lowT = false;
+    return false;
+  }
+  runPump(now) {
+    if (this.batchDone) { this.state = 'BatchDone'; return; }
+    if (!this.anyOn()) {
+      this.state = 'Idle';
+      if (this.p < this.s.startKpa && this.restartReady(now) && this.avail(0)) {
+        if (this.requestStart(0, now)) { if (!this.recordStart(now)) return; this.runStart = now; this.startupDone = false; this.lowT = false; this.hpT = false; this.state = 'Running'; }
+        else this.state = 'PreStart';
+      } else this.pending[0] = false;
+      return;
+    }
+    this.state = 'Running';
+    const ran = now - this.runStart;
+    if (this.lowCheck(now)) return;
+    if (this.s.batchMs && ran >= this.s.batchMs) { this.stopAll(now); this.batchDone = true; this.state = 'BatchDone'; return; }
+    if (this.s.maxRunMs && ran >= this.s.maxRunMs) { this.lockout('MaxRun', now); return; }
+    if (this.p >= this.s.stopKpa) {
+      if (ran >= this.s.minRunMs) {
+        let stop = true;
+        if (this.s.hpRunOnMs) { if (!this.hpT) { this.hpT = true; this.hpS = now; } stop = now - this.hpS >= this.s.hpRunOnMs; }
+        if (stop) { this.stopAll(now); this.retries = 0; this.state = 'Idle'; }
+      }
+    } else this.hpT = false;
+  }
+  runGuard(now) {
+    if (!this.on[0]) { this.startPump(0, now); this.runStart = now; this.startupDone = false; this.lowT = false; }
+    this.state = 'Running';
+    if (this.s.highLimitKpa > 0 && this.p >= this.s.highLimitKpa) { this.tripFault('HighPressure', now); return; }
+    this.lowCheck(now);
+  }
+  runSnap(now) {
+    const set = this.s.snapSetKpa, d = this.s.snapDeltaKpa; let w = this.on[0];
+    if (this.s.snapOnRising) { if (!w && this.p >= set) w = true; else if (w && this.p <= set - d) w = false; }
+    else { if (!w && this.p <= set) w = true; else if (w && this.p >= set + d) w = false; }
+    if (w && !this.on[0]) this.startPump(0, now);
+    if (!w && this.on[0]) this.stopPump(0, now);
+    this.state = this.on[0] ? 'Running' : 'Idle';
+  }
+  runTwin(now) {
+    if (!this.avail(this.lead) && this.avail(1 - this.lead)) this.lead = 1 - this.lead;
+    const L = this.lead, G = 1 - L, st = [], sp = [];
+    st[L] = this.s.startKpa; sp[L] = this.s.stopKpa; st[G] = this.s.start2Kpa; sp[G] = this.s.stop2Kpa;
+    let wasOn = this.anyOn(), leadStopped = false;
+    for (const i of [L, G]) {
+      if (!this.avail(i)) continue;
+      if (!this.on[i]) {
+        let demand = this.p < st[i];
+        if (i === L) demand = demand && this.restartReady(now);
+        if (i === G) demand = demand && this.on[L] && now - this.onSince[L] >= this.s.startupMs;
+        if (demand) {
+          if (this.requestStart(i, now)) {
+            if (!this.recordStart(now)) return;
+            if (!wasOn) { this.runStart = now; this.startupDone = false; this.lowT = false; wasOn = true; }
+          }
+        } else this.pending[i] = false;
+      } else if (this.p >= sp[i] && now - this.onSince[i] >= this.s.minRunMs) { this.stopPump(i, now); if (i === L) leadStopped = true; }
+    }
+    if (this.anyOn()) {
+      if (this.lowCheck(now)) return;
+      if (this.s.maxRunMs && now - this.runStart >= this.s.maxRunMs) { this.lockout('MaxRun', now); return; }
+    } else if (leadStopped) this.retries = 0;
+    if (leadStopped && this.s.alternate && this.avail(1 - this.lead)) {
+      if (this.lead === 0) { this.alt++; if (this.alt >= this.s.alternateEvery - 1) { this.lead = 1; this.alt = 0; } }
+      else this.lead = 0;
+    }
+    this.state = this.anyOn() ? 'Running' : (this.pending[0] || this.pending[1]) ? 'PreStart' : 'Idle';
+  }
+  alarms(out) {
+    let b = 0; const s = this.s, f = this.fault, isF = f !== 'None';
+    if (isF) b |= A.AnyFault;
+    if (this.sensorOk && ((s.highLimitKpa > 0 && this.p >= s.highLimitKpa) || (s.tripKpa > 0 && this.p <= s.tripKpa))) b |= A.HiLoLimit;
+    b |= this.anyOn() ? A.PumpOn : A.PumpOff;
+    if (f === 'HighPressure') b |= A.HighFault;
+    if (f === 'DryRun' || f === 'DryRunLockout' || f === 'LowPressure') b |= A.LowFault;
+    if (this.batchDone) b |= A.BatchDone;
+    if (f === 'AntiCycle' || this.acAlarm) b |= A.AntiCycle;
+    if (this.pending[0] || this.pending[1]) b |= A.PreStart;
+    if (f === 'Sensor') b |= A.SensorFault;
+    if (this.locked[0] || this.locked[1]) b |= A.PumpFault;
+    if (!isF && !this.lockedOut && this.sensorOk) b |= A.Healthy;
+    out.alarm = (b & s.alarmMask) !== 0; out.aux = (b & s.auxMask) !== 0;
+  }
+  update(inp, now) {
+    const out = { pump: [false, false], alarm: false, aux: false }, s = this.s;
+    if (!this.booted) { this.booted = true; this.bootTime = now; this.lastTick = now; }
+    const dt = now - this.lastTick; this.lastTick = now;
+    for (let i = 0; i < 2; i++) if (this.on[i]) this.runMs[i] += dt;
+    if (inp.mA >= 3.6 && inp.mA <= 21) { this.sensorOk = true; this.sbt = false; this.p = Math.max(0, (inp.mA - 4) / 16 * s.rangeKpa); }
+    else { if (!this.sbt) { this.sbt = true; this.sbs = now; } if (now - this.sbs >= s.sensorFaultMs) this.sensorOk = false; }
+    if (inp.reset) {
+      this.lockedOut = false; this.lockFault = 'None'; this.locked = [false, false]; this.lockPF = 'None'; this.dryWait = false;
+      this.retries = 0; this.batchDone = false; this.acAlarm = false; this.anyStart = false; this.streak = 0;
+    }
+    for (let i = 0; i < this.pc(); i++) {
+      if (inp.pumpFault[i]) this.lockPump(i, now);
+      if (this.on[i] && s.pumpFeedback[i] && !inp.running[i] && now - this.onSince[i] >= s.startConfirmMs) this.lockPump(i, now);
+    }
+    const pumpMode = s.mode === 'Pump' || s.mode === 'Twin';
+    const hpOk = s.highLimitKpa <= 0 || this.p < s.highLimitKpa;
+    if (pumpMode && inp.manual && this.sensorOk && hpOk) {
+      let i = this.lead; if (inp.pumpFault[i] && this.pc() === 2) i = 1 - i;
+      if (!inp.pumpFault[i]) {
+        if (!this.on[i]) { this.stopAll(now); this.startPump(i, now); this.runStart = now; }
+        this.state = 'Manual'; this.fault = 'None'; out.pump = [this.on[0], this.on[1]]; this.alarms(out); return out;
+      }
+    }
+    if (this.state === 'Manual') this.stopAll(now);
+    if (!this.poweredUp) {
+      if (now - this.bootTime < s.powerUpDelayMs) { this.state = 'PowerUp'; this.fault = 'None'; this.alarms(out); return out; }
+      this.poweredUp = true;
+    }
+    let block = 'None', bs = 'Fault';
+    if (!this.sensorOk) block = 'Sensor';
+    else if (this.lockedOut) { block = this.lockFault; bs = 'Lockout'; }
+    else if (pumpMode && s.highLimitKpa > 0 && this.p >= s.highLimitKpa) block = 'HighPressure';
+    else if (!inp.tankOk) block = 'LowTank';
+    else if (!inp.enable) bs = 'Stopped';
+    if (block !== 'None' || bs === 'Stopped') { this.stopAll(now); this.state = bs; this.fault = block; this.alarms(out); return out; }
+    if (this.dryWait) {
+      if (this.retryIn(now) > 0) { this.state = 'DryRunWait'; this.fault = this.dryFault; this.alarms(out); return out; }
+      this.dryWait = false;
+    }
+    if (this.acAlarm && s.maxStartsPerHour && now - this.lastStartAt >= 3600000 / s.maxStartsPerHour * 2) this.acAlarm = false;
+    this.fault = 'None';
+    if (s.mode === 'Pump') this.runPump(now); else if (s.mode === 'Guard') this.runGuard(now);
+    else if (s.mode === 'Snap') this.runSnap(now); else this.runTwin(now);
+    if (this.state !== 'Lockout' && this.state !== 'DryRunWait') {
+      this.fault = this.locked[0] || this.locked[1] ? this.lockPF : this.acAlarm ? 'AntiCycle' : 'None';
+    }
+    out.pump = [this.on[0], this.on[1]]; this.alarms(out); return out;
+  }
+}
+
+// =====================================================================
+//  2. SIMULATED SITE — pump curve, pressure tank, taps
+// =====================================================================
+const $ = (id) => document.getElementById(id);
+const site = { p: 300, ext: false, force: [null, null, null, null], forceUntil: [0, 0, 0, 0] };
+const ui_in = () => ({ demand: +$('demand').value / 100, water: $('water').checked, sensor: $('sensor').checked, float: $('float').checked,
+  remote: $('remote').checked, ol: [$('ol1').checked, $('ol2').checked], cf: [$('cf1').checked, $('cf2').checked] });
+
+let settings = defaultsFor('Pump');
+let ctl = new Ctl(settings);
+let simNow = 0, relays = [false, false, false, false], motor = [false, false], lastOut = { pump: [false, false], alarm: false, aux: false };
+const trend = [];
+let trendAcc = 0;
+const events = [];
+const clockAt = (ms) => { const m = Math.floor(ms / 60000) + 6 * 60; return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+const logEvent = (txt) => { events.unshift({ t: clockAt(simNow), txt, p: Math.round(site.p) }); events.length = Math.min(events.length, 40); };
+logEvent('POWER ON');
+
+let manualHeld = false, resetPulse = false;
+const step = (dt) => {
+  const s = ui_in();
+  // motors follow relays (forced outputs win during commissioning tests)
+  for (let i = 0; i < 4; i++) if (site.force[i] !== null && simNow >= site.forceUntil[i]) site.force[i] = null;
+  const r = [lastOut.pump[0], lastOut.pump[1], lastOut.alarm, lastOut.aux].map((v, i) => (site.force[i] !== null ? site.force[i] : v));
+  relays = r;
+  // Guard mode: R1 only *permits* an external pressure switch to run the pump
+  if (settings.mode === 'Guard') { if (site.p < 250) site.ext = true; else if (site.p > 400) site.ext = false; }
+  motor = [0, 1].map((i) => {
+    const drive = settings.mode === 'Guard' && i === 0 ? r[0] && site.ext : r[i];
+    return drive && !s.cf[i] && !s.ol[i];
+  });
+  // hydraulics (kPa per second)
+  let dp = 0;
+  for (let i = 0; i < 2; i++) if (motor[i] && s.water) dp += 75 * Math.max(0, 1 - site.p / 540);
+  dp -= s.demand * 0.11 * site.p + 0.15;
+  site.p = Math.max(0, site.p + dp * dt / 1000 + (Math.random() - 0.5) * 0.6);
+  const inp = { mA: s.sensor ? 4 + Math.min(1.06, site.p / settings.rangeKpa) * 16 : 0, running: motor.slice(),
+    pumpFault: s.ol.slice(), enable: s.remote, tankOk: s.float, reset: resetPulse, manual: manualHeld };
+  resetPulse = false;
+  const prevF = ctl.fault, prevS = ctl.state;
+  lastOut = ctl.update(inp, simNow);
+  if (ctl.fault !== prevF && ctl.fault !== 'None') logEvent(FAULT[ctl.fault][0] + ' ' + FAULT[ctl.fault][1]);
+  if (prevS !== ctl.state && (ctl.state === 'Running' && (prevS === 'DryRunWait'))) logEvent('RETRY START');
+  trendAcc += dt;
+  if (trendAcc >= 500) { trendAcc = 0; trend.push({ p: ctl.p, on: ctl.anyOn() }); if (trend.length > 60) trend.shift(); }
+  simNow += dt;
+};
+
+// =====================================================================
+//  3. PIXEL DISPLAY ENGINE (128 x 64)
+// =====================================================================
+const W = 128, H = 64, CELL = 4, buf = new Uint8Array(W * H);
+const cv = $('lcd'), ctx = cv.getContext('2d');
+const F = {
+  '0':[14,17,19,21,25,17,14],'1':[4,12,4,4,4,4,14],'2':[14,17,1,2,4,8,31],'3':[31,2,4,2,1,17,14],'4':[2,6,10,18,31,2,2],
+  '5':[31,16,30,1,1,17,14],'6':[6,8,16,30,17,17,14],'7':[31,1,2,4,8,8,8],'8':[14,17,17,14,17,17,14],'9':[14,17,17,15,1,2,12],
+  'A':[14,17,17,31,17,17,17],'B':[30,17,17,30,17,17,30],'C':[14,17,16,16,16,17,14],'D':[28,18,17,17,17,18,28],'E':[31,16,16,30,16,16,31],
+  'F':[31,16,16,30,16,16,16],'G':[14,17,16,23,17,17,15],'H':[17,17,17,31,17,17,17],'I':[14,4,4,4,4,4,14],'J':[7,2,2,2,2,18,12],
+  'K':[17,18,20,24,20,18,17],'L':[16,16,16,16,16,16,31],'M':[17,27,21,21,17,17,17],'N':[17,17,25,21,19,17,17],'O':[14,17,17,17,17,17,14],
+  'P':[30,17,17,30,16,16,16],'Q':[14,17,17,17,21,18,13],'R':[30,17,17,30,20,18,17],'S':[15,16,16,14,1,1,30],'T':[31,4,4,4,4,4,4],
+  'U':[17,17,17,17,17,17,14],'V':[17,17,17,17,17,10,4],'W':[17,17,17,21,21,21,10],'X':[17,17,10,4,10,17,17],'Y':[17,17,17,10,4,4,4],
+  'Z':[31,1,2,4,8,16,31],' ':[0,0,0,0,0,0,0],'.':[0,0,0,0,0,12,12],':':[0,12,12,0,12,12,0],'-':[0,0,0,31,0,0,0],'/':[1,1,2,4,8,16,16],
+  '%':[24,25,2,4,8,19,3],'>':[8,4,2,1,2,4,8],'<':[2,4,8,16,8,4,2],'!':[4,4,4,4,4,0,4],'+':[0,4,4,31,4,4,0],'?':[14,17,1,2,4,0,4],
+  '=':[0,0,31,0,31,0,0],'&':[12,18,20,8,21,18,13],'*':[0,4,21,14,21,4,0],'(':[2,4,8,8,8,4,2],')':[8,4,2,2,2,4,8],'^':[4,10,17,0,0,0,0]
+};
+const clear = () => buf.fill(0);
+const px = (x, y, v = 1) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < W && y >= 0 && y < H) buf[y * W + x] = v; };
+const rect = (x, y, w, h, v = 1) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, v); };
+const frame = (x, y, w, h, v = 1) => { rect(x, y, w, 1, v); rect(x, y + h - 1, w, 1, v); rect(x, y, 1, h, v); rect(x + w - 1, y, 1, h, v); };
+const line = (x0, y0, x1, y1, v = 1) => {
+  x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+  const dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1, dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1; let e = dx + dy;
+  for (;;) { px(x0, y0, v); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } }
+};
+const circle = (cx, cy, r, fill, v = 1) => { for (let y = -r - 1; y <= r + 1; y++) for (let x = -r - 1; x <= r + 1; x++) { const d = Math.hypot(x, y); if (fill ? d <= r + 0.3 : Math.abs(d - r) < 0.55) px(cx + x, cy + y, v); } };
+const textW = (s, sc = 1) => String(s).length * 6 * sc - sc;
+const text = (s, x, y, sc = 1, v = 1) => { s = String(s).toUpperCase(); for (let n = 0; n < s.length; n++) { const g = F[s[n]] || F['?']; for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if ((g[r] >> (4 - c)) & 1) rect(x + n * 6 * sc + c * sc, y + r * sc, sc, sc, v); } };
+const center = (s, y, sc = 1, v = 1) => text(s, Math.round((W - textW(s, sc)) / 2), y, sc, v);
+const right = (s, y, sc = 1, v = 1, edge = 126) => text(s, edge - textW(s, sc), y, sc, v);
+const header = (l, r) => { rect(0, 0, W, 9); text(l, 2, 1, 1, 0); if (r) right(r, 1, 1, 0); };
+const impeller = (cx, cy, r, a) => { circle(cx, cy, r, false); for (let k = 0; k < 4; k++) { const b = a + k * Math.PI / 2; line(cx, cy, cx + Math.cos(b) * (r - 2), cy + Math.sin(b) * (r - 2)); } rect(cx - 1, cy - 1, 3, 3); };
+const wrap = (str, n = 21) => { const out = []; let cur = ''; for (const w of str.split(' ')) { if ((cur + ' ' + w).trim().length > n) { out.push(cur.trim()); cur = w; } else cur += ' ' + w; } if (cur.trim()) out.push(cur.trim()); return out; };
+const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+const blit = () => {
+  ctx.fillStyle = '#c3c9bc'; ctx.fillRect(0, 0, cv.width, cv.height);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { ctx.fillStyle = buf[y * W + x] ? '#1d231f' : 'rgba(29,35,31,0.05)'; ctx.fillRect(x * CELL, y * CELL, CELL - 0.6, CELL - 0.6); }
+};
+
+// =====================================================================
+//  4. FIRMWARE UI — screens, menus, editors
+// =====================================================================
+const psi = () => settings.units === 'psi';
+const pv = (k) => String(Math.round(psi() ? k * 0.145038 : k));
+const U = () => (psi() ? 'PSI' : 'KPA');
+const MODE_NAME = { Pump: 'PRESSURE PUMP', Guard: 'PRESSURE GUARD', Snap: 'SNAP SWITCH', Twin: 'TWIN PUMP' };
+const STATE_SHORT = { PowerUp: 'BOOT', Stopped: 'STOPPED', Idle: 'STANDBY', PreStart: 'PRE-START', Running: 'RUN', DryRunWait: 'RETRY', Lockout: 'LOCKOUT', Fault: 'FAULT', Manual: 'MANUAL', BatchDone: 'BATCH DONE' };
+const FAULT = {
+  None: ['OK', ''], Sensor: ['SENSOR', 'NO SIGNAL'], HighPressure: ['HIGH', 'PRESSURE'], LowPressure: ['LOW', 'PRESSURE'], LowTank: ['LOW TANK', 'FLOAT OPEN'],
+  DryRun: ['DRY RUN', 'RETRYING'], DryRunLockout: ['DRY RUN', 'LOCKED OUT'], AntiCycle: ['TOO MANY', 'STARTS'], MaxRun: ['MAX RUN', 'BURST PIPE?'],
+  Pump1: ['PUMP 1', 'OVERLOAD/CONT'], Pump2: ['PUMP 2', 'OVERLOAD/CONT'], NoPumps: ['NO PUMPS', 'AVAILABLE']
+};
+let toast = null;  // {a, b, until}
+const showToast = (a, b = '', ms = 1400) => { toast = { a, b, until: performance.now() + ms }; };
+let real = 0;  // real time ms, for blinking and holds
+
+// ---- home screens (cycled with ▶) ----
+function drawHomeMain() {
+  const s = settings, on = ctl.on, any = ctl.anyOn();
+  if (ctl.state === 'PowerUp') return drawBoot();
+  if (['Fault', 'Lockout', 'DryRunWait'].includes(ctl.state)) return drawFault();
+  header(MODE_NAME[s.mode], STATE_SHORT[ctl.state] + (any && Math.floor(real / 500) % 2 ? '*' : ''));
+  if (s.mode === 'Twin') {
+    text(pv(ctl.p).padStart(3, ' '), 2, 11, 3); right(U(), 33, 1, 1, 53);
+    [0, 1].forEach((i) => {
+      const cx = 11 + i * 30; impeller(cx, 48, 7, on[i] ? real / 140 + i : 0.4);
+      const lx = cx + 9;
+      if (i === ctl.lead) { rect(lx - 1, 50, 13, 9); text('P' + (i + 1), lx, 51, 1, 0); } else text('P' + (i + 1), lx, 51);
+    });
+    rect(64, 10, 1, 54);
+    const rows = [['P1', ctl.locked[0] ? 'FAULT' : on[0] ? 'RUN' : 'READY'], ['P2', ctl.locked[1] ? 'FAULT' : on[1] ? 'RUN' : 'READY'],
+      ['LEAD', 'P' + (ctl.lead + 1)], ['ASSIST', on[0] && on[1] ? 'ON' : 'OFF'], ['ALT IN', s.alternate ? String(ctl.startsToAlt()) : 'OFF'], ['START', pv(s.startKpa)]];
+    rows.forEach((r, i) => { text(r[0], 68, 11 + i * 9); right(r[1], 11 + i * 9); });
+    if (ctl.fault !== 'None' && Math.floor(real / 400) % 2) { rect(0, 56, 63, 8); text(FAULT[ctl.fault][0], 2, 57, 1, 0); }
+    return;
+  }
+  text(pv(ctl.p).padStart(3, ' '), 2, 11, 3); right(U(), 33, 1, 1, 53);
+  impeller(10, 48, 7, on[0] ? real / 140 : 0.4);
+  rect(20, 43, 42, 1); rect(20, 53, 42, 1);
+  if (on[0]) for (let k = 0; k < 4; k++) { const x = 21 + ((k * 10 + real / 55) % 40); if (x < 57) text('>', x, 45); }
+  frame(66, 11, 62, 44);
+  const yOf = (p) => 53 - Math.round(Math.min(1, p / 600) * 41);
+  const lines = s.mode === 'Snap' ? [s.snapSetKpa] : s.mode === 'Guard' ? [s.tripKpa, s.highLimitKpa] : [s.startKpa, s.stopKpa];
+  for (const lv of lines) if (lv > 0) for (let x = 67; x < 127; x += 3) px(x, yOf(lv));
+  let prev = null;
+  trend.forEach((q, i) => { const x = 127 - trend.length + i, y = yOf(q.p); if (prev !== null) line(x - 1, prev, x, y); if (q.on) px(x, 54); prev = y; });
+  const bottom = s.mode === 'Guard' ? 'LO' + pv(s.tripKpa) + ' HI' + pv(s.highLimitKpa)
+    : s.mode === 'Snap' ? 'SET' + pv(s.snapSetKpa) + ' D' + pv(s.snapDeltaKpa) : 'S' + pv(s.startKpa) + ' P' + pv(s.stopKpa);
+  text(bottom, 2, 57);
+  const st = ctl.state === 'Running' ? (s.mode === 'Guard' ? 'SYS OK' : 'RUN ' + mmss(simNow - ctl.runStart).slice(-5))
+    : ctl.state === 'Idle' ? 'STANDBY' : STATE_SHORT[ctl.state];
+  if (ctl.fault !== 'None' && Math.floor(real / 400) % 2) { rect(66, 56, 62, 8); right(FAULT[ctl.fault][0], 57, 1, 0); } else right(st, 57);
+}
+function drawBoot() {
+  const f = Math.min(1, (simNow - ctl.bootTime) / settings.powerUpDelayMs);
+  if (f < 0.32) {
+    const t = f / 0.32 * 3.2;
+    circle(64, 20, 9, true);
+    const sweep = Math.min(1, t / 1.2) * Math.PI * 2, tilt = -0.22;
+    for (let k = 0; k <= sweep; k += 0.015) {
+      const ex = Math.cos(k) * 26, ey = Math.sin(k) * 6.5, x = 64 + ex * Math.cos(tilt) - ey * Math.sin(tilt), y = 20 + ex * Math.sin(tilt) + ey * Math.cos(tilt);
+      const inside = Math.hypot(x - 64, y - 20) < 10.5; if (inside && Math.sin(k) < 0) continue;
+      px(x, y); px(x, y + 1); if (inside) { px(x, y - 1, 0); px(x, y + 2, 0); }
+    }
+    text('JANUX'.slice(0, Math.max(0, Math.min(5, Math.floor((t - 1.2) / 0.18)))), Math.round((W - textW('JANUX', 2)) / 2), 34, 2);
+    if (t > 2.3) center('PUMP & SITE CONTROL', 54);
+    return;
+  }
+  header('SELF-CHECK', 'V0.3');
+  const mA = ctl.sensorOk ? (4 + ctl.p / settings.rangeKpa * 16).toFixed(1) + 'MA OK' : 'NO SIGNAL';
+  const items = [['SENSOR', mA], ['RELAYS 1-4', 'OK'], ['INPUTS 1-8', 'OK'], ['SETTINGS', validate(settings) ? 'CHECK!' : 'OK'], ['MODE', settings.mode.toUpperCase()]];
+  items.forEach((it, i) => { if (f < 0.34 + i * 0.07) return; text(it[0], 2, 11 + i * 8); right(it[1], 11 + i * 8); });
+  if (f > 0.72) { rect(0, 52, W, 12, 0); text('READY IN ' + Math.ceil((1 - f) * settings.powerUpDelayMs / 1000) + 'S', 2, 52); frame(64, 52, 62, 7); rect(65, 53, Math.round(60 * (f - 0.72) / 0.28), 5); }
+}
+function drawFault() {
+  const blink = Math.floor(real / 500) % 2 === 0, f = ctl.fault, latched = ctl.state === 'Lockout';
+  if (blink) header('! FAULT', 'PUMP OFF'); else { text('! FAULT', 2, 1); right('PUMP OFF', 1); rect(0, 9, W, 1); }
+  if (f === 'Sensor') {
+    for (let k = 0; k < 3; k++) { const a = k * Math.PI / 3, dx = Math.cos(a) * 10, dy = Math.sin(a) * 10; line(14 - dx, 30 - dy, 14 + dx, 30 + dy); }
+  } else if (f === 'DryRun' || f === 'DryRunLockout' || f === 'LowPressure') {
+    for (let y = 16; y <= 28; y++) { const w = Math.round((y - 16) * 0.55); rect(14 - w, y, w * 2 + 1, 1); }
+    circle(14, 33, 7, true); for (let d = -1; d <= 0; d++) { line(10 + d, 29, 18 + d, 37, 0); line(18 + d, 29, 10 + d, 37, 0); }
+  } else { frame(6, 22, 17, 14); rect(6, 22, 17, 14); circle(14, 19, 5, false); text('!', 12, 25, 1, 0); }
+  const [a, b] = FAULT[f] || ['FAULT', ''];
+  text(a, 30, 13, textW(a, 2) <= 96 ? 2 : 1);
+  text(b, 30, 31);
+  if (ctl.state === 'DryRunWait') text('RETRY IN ' + mmss(ctl.retryIn(simNow)), 30, 41);
+  else if (latched) text('LOCKED OUT', 30, 41);
+  else if (f === 'Sensor') text('SWAP SENSOR', 30, 41);
+  else if (f === 'LowTank') text('WAIT FOR FLOAT', 30, 41);
+  rect(0, 54, W, 1);
+  text(latched || ctl.state === 'DryRunWait' ? 'HOLD ENTER=RESET' : 'CLEARS BY ITSELF', 2, 57);
+}
+function drawStatus() {
+  header('STATUS', clockAt(simNow));
+  const rows = [['STATE', STATE_SHORT[ctl.state]], ['FAULT', FAULT[ctl.fault][0]], ['RETRY IN', ctl.dryWait ? mmss(ctl.retryIn(simNow)) : '--'],
+    ['RETRIES', String(ctl.retries)], ['RESTART', settings.restart.toUpperCase()], ['MIN RUN', settings.minRunMs / 1000 + 'S']];
+  rows.forEach((r, i) => { text(r[0], 2, 11 + i * 9); right(r[1], 11 + i * 9); });
+}
+function drawIO() {
+  header('I/O LIVE', 'COMMISSION');
+  const s = ui_in(), box = (x, y, l, on) => { frame(x, y, 11, 9); if (on) rect(x + 1, y + 1, 9, 7); text(l, x + 3, y + 1, 1, on ? 0 : 1); };
+  text('IN', 2, 12);
+  const ins = [motor[0], s.ol[0], motor[1], s.ol[1], s.remote, s.float, held.enter !== undefined, false];
+  ins.forEach((on, i) => box(16 + i * 14, 11, String(i + 1), on));
+  text('OUT', 2, 23); relays.forEach((on, i) => box(22 + i * 14, 22, String(i + 1), on));
+  right('AO 0.0V', 23);
+  const mA = s.sensor ? 4 + Math.min(1.06, site.p / settings.rangeKpa) * 16 : 0;
+  text('AI1 ' + mA.toFixed(1) + 'MA', 2, 34); right(ctl.sensorOk ? pv(ctl.p) + U() : 'FAULT', 34);
+  frame(2, 43, 124, 5); rect(3, 44, Math.max(0, Math.round((mA - 4) / 16 * 122)), 3);
+  text('AI2 0.0MA', 2, 50); right('NOT USED', 50);
+  text('MENU>COMMISSION=TEST', 2, 57);
+}
+function drawCounters() {
+  header('COUNTERS', '');
+  const h = (i) => (ctl.runMs[i] / 3600000).toFixed(2);
+  [['', 'P1', 'P2'], ['STARTS', String(ctl.starts[0]), String(ctl.starts[1])], ['RUN HRS', h(0), h(1)]].forEach((r, i) => {
+    text(r[0], 2, 12 + i * 10); right(r[1], 12 + i * 10, 1, 1, 90); right(r[2], 12 + i * 10);
+  });
+  text('FAULTS LOGGED', 2, 44); right(String(events.filter((e) => !['POWER ON', 'SETTINGS SAVED', 'FAULT RESET', 'RETRY START'].includes(e.txt) && !e.txt.startsWith('MODE')).length), 44);
+  text('UPTIME', 2, 54); right(mmss(simNow - ctl.bootTime), 54);
+}
+function drawLog() {
+  header('EVENT LOG', events.length + '');
+  events.slice(0, 6).forEach((e, i) => { text(e.t, 2, 11 + i * 9); text(e.txt.slice(0, 15), 35, 11 + i * 9); });
+}
+const HOMES = [drawHomeMain, drawStatus, drawIO, drawCounters, drawLog];
+
+// ---- menu engine ----
+const stack = [];  // screens on top of home; each {draw(), key(k)}
+let homeIdx = 0;
+
+function listScreen(title, itemsFn) {
+  const scr = { sel: 0,
+    draw() { const items = itemsFn(); this.sel = Math.min(this.sel, items.length - 1); header(title, (this.sel + 1) + '/' + items.length);
+      const top = Math.max(0, Math.min(this.sel - 4, items.length - 5));
+      for (let i = 0; i < 5 && top + i < items.length; i++) { const idx = top + i, y = 11 + i * 9, on = idx === this.sel, it = items[idx];
+        if (on) rect(0, y - 1, W, 9); text(it.label, 3, y, 1, on ? 0 : 1); const v = it.value ? it.value() : '>'; if (v) right(v, y, 1, on ? 0 : 1, 124); }
+      text('ENTER OPEN  BACK EXIT', 2, 57); },
+    key(k) { const items = itemsFn();
+      if (k === 'up') this.sel = (this.sel + items.length - 1) % items.length;
+      else if (k === 'down') this.sel = (this.sel + 1) % items.length;
+      else if (k === 'enter') items[this.sel].open();
+      else if (k === 'back') stack.pop(); } };
+  return scr;
+}
+function applySettings(mut, label) {
+  const ns = JSON.parse(JSON.stringify(settings)); mut(ns);
+  const issue = validate(ns);
+  if (issue) { stack.push(messageScreen('CHECK SETTINGS', issue)); return false; }
+  settings = ns; ctl.s = settings; logEvent('SETTINGS SAVED'); showToast('SAVED', label || ''); return true;
+}
+function messageScreen(title, msg) {
+  return { draw() { header(title, 'NOT SAVED'); wrap(msg).slice(0, 4).forEach((l, i) => text(l, 2, 14 + i * 9)); text('BACK = FIX IT', 2, 57); },
+    key(k) { if (k === 'back' || k === 'enter') stack.pop(); } };
+}
+// numeric editor. kind: 'p' pressure(kPa), 's' seconds, 'm' minutes, 'n' plain number
+function numEditor(title, label, get, set, kind, min, max) {
+  const toShow = (v) => kind === 'p' ? (psi() ? v * 0.145038 : v) : kind === 's' ? v / 1000 : kind === 'm' ? v / 60000 : v;
+  const fromShow = (d) => kind === 'p' ? (psi() ? d / 0.145038 : d) : kind === 's' ? d * 1000 : kind === 'm' ? d * 60000 : d;
+  const stepOf = () => (kind === 'p' ? (psi() ? 1 : 10) : 1);
+  const unit = () => (kind === 'p' ? U() : kind === 's' ? 'SEC' : kind === 'm' ? 'MIN' : '');
+  let val = Math.round(toShow(get()));
+  return {
+    draw() {
+      header(title, 'EDIT'); text(label, 2, 12);
+      const blink = Math.floor(real / 350) % 3 !== 0, s = String(val);
+      if (blink) text(s, 2, 22, 3); text(unit(), 6 + textW(s, 3), 36);
+      if (kind === 'p') {
+        const bx = (k) => 3 + Math.round(Math.min(1, k / 700) * 121), cur = fromShow(val);
+        frame(2, 47, 124, 6); rect(3, 48, Math.max(0, bx(cur) - 3), 4);
+        const marks = settings.mode === 'Guard' ? [settings.tripKpa, settings.highLimitKpa] : settings.mode === 'Snap' ? [settings.snapSetKpa] : [settings.tripKpa, settings.startKpa, settings.stopKpa, settings.highLimitKpa];
+        marks.forEach((m) => { if (m > 0) rect(bx(m), 44, 1, 12); }); rect(bx(cur), 44, 2, 12);
+        right('NOW ' + pv(ctl.p), 12);
+      }
+      text('^/V CHANGE  ENTER SAVE', 0, 57);
+    },
+    key(k) {
+      if (k === 'up') val = Math.min(Math.round(toShow(max)), val + stepOf());
+      else if (k === 'down') val = Math.max(Math.round(toShow(min)), val - stepOf());
+      else if (k === 'back') stack.pop();
+      else if (k === 'enter') { const v = fromShow(val); if (applySettings((ns) => set(ns, v), label)) stack.pop(); }
+    } };
+}
+function choiceEditor(title, options, get, set) {
+  const scr = listScreen(title, () => options.map((o) => ({ label: o[1], value: () => (get() === o[0] ? '*' : ''),
+    open: () => { if (applySettings((ns) => set(ns, o[0]), o[1])) stack.pop(); } })));
+  scr.sel = Math.max(0, options.findIndex((o) => o[0] === get()));
+  return scr;
+}
+function pinScreen() {
+  const d = [0, 0, 0, 0]; let pos = 0;
+  return {
+    draw() { header('SETUP', 'LOCKED'); center('ENTER PIN', 14);
+      for (let i = 0; i < 4; i++) { const x = 33 + i * 16; if (i === pos) rect(x, 26, 13, 15); else frame(x, 26, 13, 15); text(i < pos ? '*' : String(d[i]), x + 4, 30, 1, i === pos ? 0 : 1); }
+      text('^/V DIGIT  > NEXT', 2, 48); text('ENTER = OK', 2, 57); },
+    key(k) {
+      if (k === 'up') d[pos] = (d[pos] + 1) % 10; else if (k === 'down') d[pos] = (d[pos] + 9) % 10;
+      else if (k === 'right' && pos < 3) pos++; else if (k === 'back') { if (pos > 0) pos--; else stack.pop(); }
+      else if (k === 'enter') { if (pos < 3) { pos++; return; } if (d.join('') === '1234') { stack.pop(); stack.push(mainMenu()); } else { showToast('WRONG PIN', 'TRY 1234'); d.fill(0); pos = 0; } }
+    } };
+}
+function testScreen() {
+  let sel = 0; const names = ['R1 PUMP 1', 'R2 PUMP 2', 'R3 ALARM', 'R4 AUX'];
+  return {
+    draw() { header('OUTPUT TEST', 'FORCE 5S');
+      names.forEach((n, i) => { const y = 11 + i * 9, on = i === sel; if (on) rect(0, y - 1, W, 9); text(n, 3, y, 1, on ? 0 : 1);
+        const f = site.force[i]; right(f !== null ? 'ON ' + mmss(site.forceUntil[i] - simNow).slice(-2) + 'S' : relays[i] ? 'ON' : 'OFF', y, 1, on ? 0 : 1, 124); });
+      rect(0, 47, W, 1);
+      if (sel < 2 && site.force[sel] !== null) {
+        const fb = motor[sel], ok = simNow - (site.forceUntil[sel] - 5000) > 1500;
+        if (!ok) text('WAITING IN' + (sel * 2 + 1) + '...', 2, 51);
+        else if (fb) text('FEEDBACK IN' + (sel * 2 + 1) + ' OK', 2, 51);
+        else if (Math.floor(real / 300) % 2) { rect(0, 49, W, 15); text('IN' + (sel * 2 + 1) + ' NO FEEDBACK!', 2, 51, 1, 0); text('CHECK CONTACTOR', 2, 57, 1, 0); }
+        else { text('IN' + (sel * 2 + 1) + ' NO FEEDBACK!', 2, 51); text('CHECK CONTACTOR', 2, 57); }
+      } else text('ENTER = FORCE ON 5S', 2, 51);
+    },
+    key(k) {
+      if (k === 'up') sel = (sel + 3) % 4; else if (k === 'down') sel = (sel + 1) % 4; else if (k === 'back') stack.pop();
+      else if (k === 'enter') { site.force[sel] = true; site.forceUntil[sel] = simNow + 5000; }
+    } };
+}
+function mainMenu() {
+  const s = () => settings;
+  const twin = () => s().mode === 'Twin';
+  const P = (label, key, min = 0, max = 2000) => ({ label, value: () => pv(s()[key]), open: () => stack.push(numEditor('PRESSURES', label, () => s()[key], (ns, v) => { ns[key] = Math.round(v); }, 'p', min, max)) });
+  const T = (label, key, kind, min, max) => ({ label, value: () => { const v = s()[key]; return v === 0 ? 'OFF' : kind === 'm' ? Math.round(v / 60000) + 'M' : Math.round(v / 1000) + 'S'; },
+    open: () => stack.push(numEditor('TIMERS', label, () => s()[key], (ns, v) => { ns[key] = Math.round(v); }, kind, min, max)) });
+  const pressures = () => {
+    const m = s().mode;
+    if (m === 'Guard') return [P('LOW TRIP', 'tripKpa'), P('HIGH TRIP', 'highLimitKpa')];
+    if (m === 'Snap') return [P('SET POINT', 'snapSetKpa', 7), P('DIFFERENTIAL', 'snapDeltaKpa', 7, 140),
+      { label: 'RELAY ON', value: () => (s().snapOnRising ? 'ABOVE' : 'BELOW'), open: () => stack.push(choiceEditor('RELAY ON', [[false, 'BELOW SET'], [true, 'ABOVE SET']], () => s().snapOnRising, (ns, v) => { ns.snapOnRising = v; })) }];
+    const l = [P(twin() ? 'P1 START' : 'START', 'startKpa', 1), P(twin() ? 'P1 STOP' : 'STOP', 'stopKpa'), P('TRIP (DRY RUN)', 'tripKpa'), P('HIGH LIMIT', 'highLimitKpa')];
+    if (twin()) l.push(P('P2 START', 'start2Kpa', 1), P('P2 STOP', 'stop2Kpa'));
+    return l;
+  };
+  const timers = () => {
+    const l = [T('POWER-UP DELAY', 'powerUpDelayMs', 's', 0, 600000), T('START-UP', 'startupMs', 's', 1000, 900000), T('RUN-ON (DIP)', 'runOnMs', 's', 0, 900000)];
+    if (s().mode === 'Pump' || twin()) l.push(T('MIN RUN', 'minRunMs', 's', 0, 900000), T('RESTART DELAY', 'restartDelayMs', 's', 0, 3600000),
+      T('PRE-START', 'preStartMs', 's', 0, 3600000), T('MAX RUN', 'maxRunMs', 'm', 0, 36000000));
+    if (s().mode === 'Pump') l.push(T('HP RUN-ON', 'hpRunOnMs', 's', 0, 900000), T('TIMED RUN', 'batchMs', 'm', 0, 36000000));
+    return l;
+  };
+  const protection = () => [
+    { label: 'AUTO RESTART', value: () => s().restart.toUpperCase(), open: () => stack.push(choiceEditor('AUTO RESTART', [['Off', 'OFF (LOCK OUT)'], ['Single', 'ONE RETRY'], ['Repeat', 'REPEAT'], ['Stepped', 'STEPPED 10/30/60']], () => s().restart, (ns, v) => { ns.restart = v; })) },
+    T('RETRY DELAY', 'restartAfterMs', 'm', 60000, 36000000),
+    { label: 'MAX STARTS/HR', value: () => (s().maxStartsPerHour ? String(s().maxStartsPerHour) : 'OFF'), open: () => stack.push(numEditor('PROTECTION', 'MAX STARTS/HR', () => s().maxStartsPerHour, (ns, v) => { ns.maxStartsPerHour = Math.round(v); }, 'n', 0, 1800)) },
+    { label: 'STARTS IN ROW', value: () => String(s().startsInSequence), open: () => stack.push(numEditor('PROTECTION', 'STARTS IN ROW', () => s().startsInSequence, (ns, v) => { ns.startsInSequence = Math.round(v); }, 'n', 2, 50)) },
+    { label: 'TOO MANY STARTS', value: () => (s().antiCycleLockout ? 'LOCK' : 'ALARM'), open: () => stack.push(choiceEditor('TOO MANY STARTS', [[true, 'LOCK OUT'], [false, 'ALARM ONLY']], () => s().antiCycleLockout, (ns, v) => { ns.antiCycleLockout = v; })) },
+  ];
+  const twinMenu = () => [
+    { label: 'ALTERNATE', value: () => (s().alternate ? 'YES' : 'DUTY/STBY'), open: () => stack.push(choiceEditor('ALTERNATE', [[true, 'YES'], [false, 'DUTY/STANDBY']], () => s().alternate, (ns, v) => { ns.alternate = v; })) },
+    { label: 'ALT EVERY', value: () => s().alternateEvery + '', open: () => stack.push(numEditor('TWIN', 'ALT EVERY N STARTS', () => s().alternateEvery, (ns, v) => { ns.alternateEvery = Math.round(v); }, 'n', 2, 240)) },
+  ];
+  const items = () => {
+    const l = [
+      { label: 'MODE', value: () => s().mode.toUpperCase(), open: () => stack.push(modeMenu()) },
+      { label: 'PRESSURES', open: () => stack.push(listScreen('PRESSURES', pressures)) },
+      { label: 'TIMERS', open: () => stack.push(listScreen('TIMERS', timers)) },
+    ];
+    if (s().mode !== 'Snap') l.push({ label: 'PROTECTION', open: () => stack.push(listScreen('PROTECTION', protection)) });
+    if (twin()) l.push({ label: 'TWIN PUMP', open: () => stack.push(listScreen('TWIN PUMP', twinMenu)) });
+    l.push({ label: 'UNITS', value: () => U(), open: () => stack.push(choiceEditor('UNITS', [['kpa', 'KPA'], ['psi', 'PSI']], () => s().units, (ns, v) => { ns.units = v; })) },
+      { label: 'COMMISSION', open: () => stack.push(testScreen()) },
+      { label: 'EVENT LOG', open: () => { stack.length = 0; homeIdx = 4; } });
+    return l;
+  };
+  return listScreen('SETUP', items);
+}
+function modeMenu() {
+  const modes = [['Pump', 'PRESSURE PUMP'], ['Guard', 'PRESSURE GUARD'], ['Snap', 'SNAP SWITCH'], ['Twin', 'TWIN PUMP']];
+  const scr = listScreen('MODE', () => modes.map((m) => ({ label: m[1], value: () => (settings.mode === m[0] ? '*' : ''),
+    open: () => { if (settings.mode !== m[0]) stack.push(confirmMode(m)); else stack.pop(); } })));
+  scr.sel = modes.findIndex((m) => m[0] === settings.mode);
+  return scr;
+}
+function confirmMode(m) {
+  return { draw() { header('CHANGE MODE', '?'); center(m[1], 14); center('LOADS DEFAULTS', 26); center('AND RESTARTS', 35); text('ENTER YES  BACK NO', 2, 57); },
+    key(k) { if (k === 'back') stack.pop();
+      else if (k === 'enter') { const u = settings.units; settings = defaultsFor(m[0]); settings.units = u;
+        const old = ctl; ctl = new Ctl(settings); ctl.starts = old.starts; ctl.runMs = old.runMs; trend.length = 0;
+        logEvent('MODE ' + m[0].toUpperCase()); stack.length = 0; homeIdx = 0; showToast('MODE SAVED', m[1]); } } };
+}
+
+function keyAction(k) {
+  if (stack.length) { stack[stack.length - 1].key(k); return; }
+  if (ctl.state === 'PowerUp') return;
+  if (k === 'right') homeIdx = (homeIdx + 1) % HOMES.length;
+  else if (k === 'back') homeIdx = 0;
+  else if (k === 'enter') stack.push(pinScreen());
+}
+function render() {
+  clear();
+  if (stack.length) stack[stack.length - 1].draw(); else HOMES[homeIdx]();
+  if (toast && real < toast.until) { rect(10, 18, 108, 28, 0); frame(10, 18, 108, 28); frame(12, 20, 104, 24); center(toast.a, 23); if (toast.b) center(String(toast.b).slice(0, 16), 33); }
+  if (manualHeld && Math.floor(real / 300) % 2) { rect(84, 0, 44, 9); right('MANUAL', 1, 1, 0); }
+  blit();
+}
+
+// =====================================================================
+//  5. KEYPAD + KEYBOARD (press, hold, repeat, combos)
+// =====================================================================
+const held = {}; let comboUsed = false, resetDone = false, btDone = false, lastRepeat = 0;
+const keyEl = (k) => $('key-' + k);
+function press(k) {
+  if (held[k] !== undefined) return;
+  held[k] = real; keyEl(k).classList.add('down');
+  if (k !== 'enter') keyAction(k);
+}
+function release(k) {
+  if (held[k] === undefined) return;
+  const dur = real - held[k]; delete held[k]; keyEl(k).classList.remove('down');
+  if (k === 'enter' && !comboUsed && dur < 700) keyAction('enter');
+  if (!Object.keys(held).length) { comboUsed = false; resetDone = false; btDone = false; }
+}
+['up', 'down', 'right', 'back', 'enter'].forEach((k) => {
+  const el = keyEl(k);
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); el.setPointerCapture?.(e.pointerId); press(k); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => el.addEventListener(ev, () => release(k)));
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
+  el.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (!e.repeat) press(k); } });
+  el.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.stopPropagation(); release(k); } });
+});
+const KMAP = { ArrowUp: 'up', ArrowDown: 'down', ArrowRight: 'right', ArrowLeft: 'back', Escape: 'back', Backspace: 'back', Enter: 'enter' };
+document.addEventListener('keydown', (e) => {
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (tag === 'INPUT' || (tag === 'BUTTON' && !document.activeElement.closest('.keys'))) return;
+  const k = KMAP[e.key]; if (!k) return; e.preventDefault(); if (!e.repeat) press(k);
+});
+document.addEventListener('keyup', (e) => { const k = KMAP[e.key]; if (k) release(k); });
+function holdLogic() {
+  manualHeld = held.up !== undefined && held.enter !== undefined;
+  if (manualHeld) comboUsed = true;
+  if (held.enter !== undefined && held.up === undefined && real - held.enter >= 3000 && !resetDone) {
+    resetDone = true; comboUsed = true;
+    if (ctl.fault !== 'None' || ctl.lockedOut || ctl.dryWait || ctl.batchDone) { resetPulse = true; logEvent('FAULT RESET'); showToast('FAULT RESET', ''); }
+    else showToast('NO FAULT', 'NOTHING TO RESET');
+  }
+  if (held.back !== undefined && real - held.back >= 5000 && !btDone) { btDone = true; comboUsed = true; showToast('BLUETOOTH', 'PAIRING (APP)', 2200); }
+  for (const k of ['up', 'down']) if (held[k] !== undefined && held.enter === undefined && real - held[k] > 450 && real - lastRepeat > 90) { lastRepeat = real; keyAction(k); }
+}
+
+// =====================================================================
+//  6. SITE PANEL + MAIN LOOP
+// =====================================================================
+let speed = 1;
+document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => {
+  speed = +b.dataset.speed; document.querySelectorAll('[data-speed]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+}));
+$('demand').addEventListener('input', () => { $('demandVal').textContent = $('demand').value + '%'; });
+$('power').addEventListener('click', () => {
+  const old = ctl; ctl = new Ctl(settings); ctl.starts = old.starts; ctl.runMs = old.runMs; site.force = [null, null, null, null];
+  stack.length = 0; homeIdx = 0; trend.length = 0; logEvent('POWER ON');
+});
+const setLed = (id, on) => $(id).classList.toggle('on', on);
+let lastFrame = performance.now(), acc = 0, lastAria = 0;
+function loop(now) {
+  real = now;
+  acc += Math.min(100, now - lastFrame) * speed; lastFrame = now;
+  holdLogic();
+  while (acc >= 100) { step(100); acc -= 100; }
+  render();
+  relays.forEach((on, i) => setLed('led-r' + (i + 1), on));
+  $('gauge').textContent = pv(site.p) + ' ' + (psi() ? 'psi' : 'kPa');
+  [0, 1].forEach((i) => {
+    const el = $('m' + (i + 1)), s = ui_in(), used = i === 0 || settings.mode === 'Twin';
+    const txt = !used ? 'Pump ' + (i + 1) + ' not used' : motor[i] ? (s.water ? 'Pump ' + (i + 1) + ' running' : 'Pump ' + (i + 1) + ' running DRY') : s.ol[i] ? 'Pump ' + (i + 1) + ' overload' : 'Pump ' + (i + 1) + ' stopped';
+    el.textContent = txt; el.className = 'chip' + (motor[i] ? (s.water ? ' on' : ' bad') : s.ol[i] ? ' bad' : '');
+  });
+  if (now - lastAria > 2000) { lastAria = now; cv.setAttribute('aria-label', 'Controller screen: ' + MODE_NAME[settings.mode] + ', ' + STATE_SHORT[ctl.state] + ', ' + pv(ctl.p) + ' ' + U() + (ctl.fault !== 'None' ? ', fault ' + FAULT[ctl.fault].join(' ') : '')); }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+})();
+</script>
