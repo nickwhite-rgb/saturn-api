@@ -1,4 +1,4 @@
-# Saturn Pump Controller: Modes & Functions v0.2
+# JANUX Controller: Modes & Functions v0.2
 
 Based on a study of the Kelco E30 Mk2 manual (pp. 26–39). **Goal:** match every E30 mode and function, make setup far easier, and build it so new modes can be added later without touching the old ones.
 

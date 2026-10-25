@@ -1,4 +1,4 @@
-# Saturn Pump Controller — Spec v0.1 (Draft)
+# JANUX Controller (working name, by Saturn Electrical): Spec v0.1 (Draft)
 
 **Goal:** A cheaper E30-style pressure pump controller with the pressure transducer **outside** the box, so frost only kills a cheap, plug-in sensor that a farmer can swap themselves.
 
