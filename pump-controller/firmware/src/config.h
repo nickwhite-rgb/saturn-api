@@ -6,30 +6,49 @@
 #pragma once
 #include "pump_logic.h"
 
-// ---------- Pressure settings ----------
+// ---------- Mode and settings (all pressures in kPa) ----------
+// Modes: PressurePump, Guard, Snap, Twin. See pump-controller/MODES.md.
 inline Settings makeSettings() {
-  Settings s;
-  s.rangeBar        = 10.0f;   // transducer full scale (0-10 or 0-16 bar)
-  s.cutInBar        = 2.0f;    // pump starts below this
-  s.cutOutBar       = 3.5f;    // pump stops at this
-  s.highCutoutBar   = 6.0f;    // emergency stop above this
-  s.dryRunBar       = 0.5f;    // below this while running = dry
-  s.dryRunMs        = 30000;   // ...for this long (ms) = dry run trip
-  s.minRunMs        = 10000;
-  s.restartDelayMs  = 5000;
-  s.powerUpDelayMs  = 10000;
-  s.maxRunMs        = 60UL * 60000;  // 60 min, 0 = off
-  s.maxRetries      = 0;       // 0 = retry forever
-  s.maxStarts       = 6;       // starts allowed in the window, 0 = off
-  s.cycleWindowMs   = 10UL * 60000;
-  s.rapidCycleLockout = true;  // false = alarm only
+  Settings s = defaultsFor(Mode::PressurePump);
+  s.mode            = Mode::PressurePump;  // or Mode::Twin / Mode::Guard / Mode::Snap
+  s.rangeKpa        = 1000;    // transducer full scale (1000 = 0-10 bar, 1600 = 0-16 bar)
 
-  // ---------- Pumps ----------
-  s.pumps           = 1;       // 1 or 2
+  // Pressures
+  s.startKpa        = 200;     // pump starts below this
+  s.stopKpa         = 350;     // pump stops at this
+  s.tripKpa         = 50;      // loss of prime / dry run trip, 0 = off
+  s.highLimitKpa    = 600;     // absolute high limit, 0 = off
+
+  // Timers (ms)
+  s.powerUpDelayMs  = 10000;
+  s.startupMs       = 5000;    // time for pressure to come up after a start
+  s.runOnMs         = 5000;    // tolerate dips below trip this long
+  s.minRunMs        = 10000;
+  s.restartDelayMs  = 5000;    // delayed restart after a normal stop
+  s.preStartMs      = 0;       // delay before each start, 0 = off
+  s.hpRunOnMs       = 0;       // high-pressure run-on, 0 = off. NEVER on helical/PD pumps
+  s.batchMs         = 0;       // timed run, 0 = off (needs restart = Off)
+  s.maxRunMs        = 60UL * 60000;
+
+  // Dry run restart: Off, Single, Repeat, Stepped (10/30/60 min)
+  s.restart         = Restart::Stepped;
+  s.restartAfterMs  = 10UL * 60000;  // for Single / Repeat
+
+  // Anti-cycling (bore motors): 0 = off
+  s.maxStartsPerHour = 0;
+  s.startsInSequence = 5;
+  s.antiCycleLockout = true;
+
+  // Twin pump (mode Twin only)
+  s.start2Kpa       = 180;
+  s.stop2Kpa        = 350;
   s.alternate       = true;
-  s.assistMarginBar = 0.5f;
-  s.assistDelayMs   = 10000;
+  s.alternateEvery  = 2;
   s.startConfirmMs  = 3000;
+
+  // Relay 3 = alarm, relay 4 = aux. Combine with |, e.g. Alarm::LowFault | Alarm::SensorFault
+  s.alarmMask       = Alarm::AnyFault;
+  s.auxMask         = Alarm::Healthy;
   return s;
 }
 
@@ -67,8 +86,8 @@ const InputCfg INPUT_MAP[8] = {
 };
 
 // ---------- Outputs (relays) ----------
-// Relay 1 = Pump 1, Relay 2 = Pump 2, Relay 3 = Fault alarm,
-// Relay 4 = System healthy (on when everything is OK). Relays 5-8 spare.
+// Relay 1 = Pump 1 (Guard: "system OK", Snap: switch output), Relay 2 = Pump 2,
+// Relay 3 = alarm (alarmMask), Relay 4 = aux (auxMask). Relays 5-8 spare.
 
 // ---------- Pressure transducer (4-20 mA into CH1) ----------
 // PIN: confirm with the self-test (`t`), then set it here.
@@ -76,8 +95,8 @@ const int PIN_PRESSURE = 36;
 
 // CALIBRATION (two points, read the "pin V" value from the serial monitor):
 //  1. Transducer vented to air (0 bar)          -> CAL_V_ZERO
-//  2. Pressurise, read the gauge (e.g. 3.0 bar)  -> CAL_V_KNOWN at CAL_KNOWN_BAR
+//  2. Pressurise, read the gauge (e.g. 300 kPa)  -> CAL_V_KNOWN at CAL_KNOWN_KPA
 // The defaults are a guess until you calibrate.
 const float CAL_V_ZERO = 0.40f;
 const float CAL_V_KNOWN = 1.00f;
-const float CAL_KNOWN_BAR = 3.0f;
+const float CAL_KNOWN_KPA = 300.0f;

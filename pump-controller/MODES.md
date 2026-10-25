@@ -116,6 +116,7 @@ Menu: **Setup wizard · Pressures · Timers · Protection · Alarms & relays · 
 
 | Future mode | Uses | Notes |
 |---|---|---|
+| **Wastewater pit, 2 pumps (pump-down)** | 4–20 mA submersible level transducer **or** 10-segment level probe | See 5a below |
 | Tank level fill / empty | 4–20 mA level sensor (AI2) | Start/stop on level %, high/low alarms |
 | Bore with low-level cut-out | Pressure + level or probe | Protects bore from drawdown |
 | Constant pressure (VSD) | AO 0–10 V → VSD | PID on pressure, sleep on no-flow |
@@ -125,6 +126,34 @@ Menu: **Setup wizard · Pressures · Timers · Protection · Alarms & relays · 
 | Generic thermostat / 4–20 mA switch | Any analogue input | "If input > X then relay" |
 
 ---
+
+### 5a. Wastewater pit mode (Nick's idea, Oct 2026)
+Two submersible pumps emptying a wastewater / sewage / greywater pit. Same engine as Twin Pump, but **runs on high level and stops on low level** (pump-down).
+
+**Level input, either:**
+- **4–20 mA hydrostatic level transducer** hung in the pit: continuous level in mm or %, any set points.
+- **10-segment level probe**: discrete levels (10 %, 20 % … 100 %). Set points snap to the nearest segment. Probe interface depends on the model (resistor-network / single-cable vs. multi-wire conductive), to be confirmed.
+
+**Set points (low → high):**
+| Level | Action |
+|---|---|
+| Low cut-out | All pumps stop (protects pumps from running dry / airlock) |
+| Stop | Duty pump stops |
+| Duty start | Duty pump starts |
+| Assist start | Second pump starts too (inflow beating one pump) |
+| High-level alarm | Alarm relay + strobe/buzzer, stays latched until acknowledged |
+
+**Functions:**
+- Alternate duty every N starts (reuses Twin), failover on overload / fail-to-start
+- **Backup high-level float** input: runs both pumps and alarms even if the level sensor fails
+- Sensor fault → both pumps controlled by floats only (if fitted), alarm
+- Max run time per pump (blocked / ragged impeller, stuck check valve)
+- **Anti-seize exercise**: run an idle pump for a few seconds every X days
+- Optional overnight "pump-down to low" to reduce septic odour / sludge
+- Counters: starts and run hours per pump, high-level events (handy for council compliance and spotting infiltration)
+- Remote alarm to phone (Wi-Fi / later 4G): **high level is the alarm customers care about**
+
+**Check before building:** local council / plumbing requirements for pump-station alarms (audible + visual high-level alarm is commonly required) and the probe model's wiring.
 
 ## 6. Build order
 1. **Restructure the logic** into shared protections + mode modules (no change to behaviour). All existing tests keep passing.

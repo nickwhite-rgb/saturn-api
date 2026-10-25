@@ -46,25 +46,26 @@ The board's pin numbers aren't confirmed yet (no official pin map found). **Befo
 
 ### Calibrate the pressure reading (two points)
 1. Transducer vented to air (0 bar): note the **pin V** value and put it in `CAL_V_ZERO`.
-2. Pressurise and read the gauge on the same tee (e.g. 3.0 bar): put the **pin V** value in `CAL_V_KNOWN` and the gauge reading in `CAL_KNOWN_BAR`.
+2. Pressurise and read the gauge on the same tee (e.g. 300 kPa): put the **pin V** value in `CAL_V_KNOWN` and the gauge reading in `CAL_KNOWN_KPA`.
 3. Upload again. The bar reading should now match the gauge.
 
 ## 4. Bench test checklist
 | # | Test | How | Expected |
 |---|---|---|---|
 | 1 | Power-up delay | Power on with low pressure | Waits 10 s, then pump starts |
-| 2 | Cut-in / cut-out | Open a tap, then close it | Starts below 2.0 bar, stops at 3.5 bar (after 10 s min run) |
-| 3 | **Sensor fault** | **Unplug the M12 transducer** | Pump off within 2 s, `SENSOR - replace transducer`, alarm relay on. Plug back in and it clears. |
-| 4 | Dry run | Close the suction valve | Trips after 30 s, `DRY RUN - will retry`, retries in 10 min |
-| 5 | Rapid cycling | Crack a tap so it short-cycles | Locks out on the 7th start in 10 min. `r` resets it. |
+| 2 | Start / stop | Open a tap, then close it | Starts below 200 kPa, stops at 350 kPa (after 10 s min run) |
+| 3 | **Sensor fault** | **Unplug the M12 transducer** | Pump off within 2 s, `SENSOR FAULT`, alarm relay on. Plug back in and it clears. |
+| 4 | Dry run (start-up timer) | Close the suction valve, then call for water | Pressure never reaches 50 kPa: trips after 5 s start-up, retries in 10 min |
+| 4b | Dry run (run-on timer) | Close the suction valve while running | Trips 5 s after pressure falls below 50 kPa |
+| 5 | Anti-cycling | Set `maxStartsPerHour = 360`, crack a tap so it short-cycles | Locks out on the 5th quick start in a row. `r` resets it. |
 | 6 | Max run | Leave a tap fully open (or set `maxRunMs` to 2 min to test quickly) | Locks out with `MAX RUN TIME` |
-| 7 | High pressure | Set `highCutoutBar` just above cut-out | Pump stops immediately |
+| 7 | High limit | Set `highLimitKpa` just above stop | Pump stops immediately |
 | 8 | Float | Open IN6 | Pump off, `LOW TANK`, resumes when closed |
 | 9 | Remote stop | Open IN5 | Pump off, `STOPPED`, no alarm |
 | 10 | Overload | Close IN2 | Pump off, `PUMP 1 FAULT`. With 2 pumps, pump 2 takes over. |
 | 11 | Contactor fail | Pull the contactor coil wire | No feedback in 3 s, so pump locked out (pump 2 takes over) |
-| 12 | Twin alternate | Set `pumps = 2` | Lead swaps each start |
-| 13 | Twin assist | Big flow, pressure drops below 1.5 bar | Second pump joins after 10 s |
+| 12 | Twin alternate | Set `s.mode = Mode::Twin` in `config.h` | Lead swaps each start (`alternateEvery = 2`) |
+| 13 | Twin assist | Big flow, pressure drops below 180 kPa | Second pump joins once the lead has run 5 s |
 | 14 | Manual run | Type `m` (or hold IN8) | Pump runs even in lockout, still stops on high pressure |
 | 15 | Power cut | Kill power mid-run | Restarts after 10 s, start count kept |
 

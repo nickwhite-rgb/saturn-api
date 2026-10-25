@@ -26,9 +26,9 @@ static float readPinVolts(int pin) {
 
 // Pin volts -> loop mA, using the two-point calibration in config.h
 static float voltsToMilliAmps(float v) {
-  float barPerVolt = CAL_KNOWN_BAR / (CAL_V_KNOWN - CAL_V_ZERO);
-  float bar = (v - CAL_V_ZERO) * barPerVolt;
-  return 4.0f + bar / settings.rangeBar * 16.0f;
+  float kpaPerVolt = CAL_KNOWN_KPA / (CAL_V_KNOWN - CAL_V_ZERO);
+  float kpa = (v - CAL_V_ZERO) * kpaPerVolt;
+  return 4.0f + kpa / settings.rangeKpa * 16.0f;
 }
 
 static float readPressureVolts() {
@@ -110,6 +110,15 @@ void setup() {
   }
   ctrl = PumpController(settings);
   loadCounters();
+
+  // Refuse to run on settings that clash (relays stay off)
+  Issue issue = validate(settings);
+  if (issue != Issue::None) {
+    while (true) {
+      Serial.printf("!! CHECK SETTINGS in config.h: %s\n", issueText(issue));
+      delay(5000);
+    }
+  }
 }
 
 void loop() {
@@ -167,7 +176,7 @@ void loop() {
   relay[0] = out.pump[0];
   relay[1] = out.pump[1];
   relay[2] = out.alarm;
-  relay[3] = !out.alarm && ctrl.state() != State::Lockout;  // system healthy
+  relay[3] = out.aux;
   board::transfer(relay, closed);
 
   saveCounters(now);
@@ -176,7 +185,7 @@ void loop() {
   static uint32_t lastPrint = 0;
   if (now - lastPrint >= 1000) {
     lastPrint = now;
-    Serial.printf("%5.2f bar (%5.2f mA, pin %4.2f V) | %-16s | P1 %s P2 %s | lead P%d | %s",
+    Serial.printf("%4.0f kPa (%5.2f mA, pin %4.2f V) | %-16s | P1 %s P2 %s | lead P%d | %s",
                   ctrl.pressure(), in.mA, volts, stateName(ctrl.state()),
                   out.pump[0] ? "ON " : "off", out.pump[1] ? "ON " : "off", ctrl.lead() + 1,
                   faultName(ctrl.fault()));
