@@ -12,6 +12,7 @@ inline Settings makeSettings() {
   Settings s = defaultsFor(Mode::PressurePump);
   s.mode            = Mode::PressurePump;  // or Mode::Twin / Mode::Guard / Mode::Snap
   s.rangeKpa        = 1000;    // transducer full scale (1000 = 0-10 bar, 1600 = 0-16 bar)
+  s.units           = Units::Kpa;  // display only: Units::Kpa or Units::Psi (settings below stay in kPa)
 
   // Pressures
   s.startKpa        = 200;     // pump starts below this

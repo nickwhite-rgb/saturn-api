@@ -7,6 +7,12 @@
 
 enum class Mode : uint8_t { PressurePump = 1, Guard = 2, Snap = 3, Twin = 4 };
 
+// Display units. All logic and settings stay in kPa; this only changes what is shown.
+enum class Units : uint8_t { Kpa, Psi };
+inline float toDisplay(float kpa, Units u) { return u == Units::Psi ? kpa * 0.145038f : kpa; }
+inline float fromDisplay(float v, Units u) { return u == Units::Psi ? v / 0.145038f : v; }
+inline const char* unitName(Units u) { return u == Units::Psi ? "psi" : "kPa"; }
+
 // What happens after a dry run / low pressure trip
 enum class Restart : uint8_t {
   Off,      // stay locked out until reset
@@ -57,6 +63,7 @@ const char* stateName(State s);
 struct Settings {
   Mode mode = Mode::PressurePump;
   float rangeKpa = 1000;         // transducer full scale (20 mA)
+  Units units = Units::Kpa;      // what the screen / app shows
 
   // --- Pressures (kPa) ---
   float startKpa = 200;          // pump 1 / lead pump start

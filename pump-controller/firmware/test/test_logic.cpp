@@ -603,6 +603,15 @@ static void test_validate() {
   CHECK(validate(s) == Issue::SnapDeltaZero);
 }
 
+static void test_units() {
+  puts("display units kPa / psi");
+  CHECK(toDisplay(1000, Units::Kpa) == 1000);
+  float psi = toDisplay(1000, Units::Psi);
+  CHECK(psi > 145.0f && psi < 145.1f);
+  float back = fromDisplay(psi, Units::Psi);
+  CHECK(back > 999.9f && back < 1000.1f);
+}
+
 static void test_relay_masks() {
   puts("alarm / aux relay options");
   Settings s = defaultsFor(Mode::PressurePump);
@@ -648,6 +657,7 @@ int main() {
   test_snap();
   test_validate();
   test_relay_masks();
+  test_units();
   if (failures) {
     printf("\n%d check(s) FAILED\n", failures);
     return 1;

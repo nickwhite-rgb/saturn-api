@@ -185,8 +185,9 @@ void loop() {
   static uint32_t lastPrint = 0;
   if (now - lastPrint >= 1000) {
     lastPrint = now;
-    Serial.printf("%4.0f kPa (%5.2f mA, pin %4.2f V) | %-16s | P1 %s P2 %s | lead P%d | %s",
-                  ctrl.pressure(), in.mA, volts, stateName(ctrl.state()),
+    Serial.printf("%4.0f %s (%5.2f mA, pin %4.2f V) | %-16s | P1 %s P2 %s | lead P%d | %s",
+                  toDisplay(ctrl.pressure(), settings.units), unitName(settings.units), in.mA, volts,
+                  stateName(ctrl.state()),
                   out.pump[0] ? "ON " : "off", out.pump[1] ? "ON " : "off", ctrl.lead() + 1,
                   faultName(ctrl.fault()));
     uint32_t wait = ctrl.retryInMs(now);
