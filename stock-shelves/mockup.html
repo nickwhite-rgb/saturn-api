@@ -1,0 +1,790 @@
+<title>Saturn Stock Shelves</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sticky top bar with three views (shelf screen, office dashboard, brief).
+   The shelf screen is a fixed 1024x640 device scaled to fit; the rest flows. */
+:root {
+  --bg: #eef2f5;
+  --surface: #ffffff;
+  --sunk: #f6f8fa;
+  --ink: #13202b;
+  --muted: #5a6875;
+  --line: #d9e0e7;
+  --accent: #185FA5;
+  --accent-ink: #ffffff;
+  --ok: #2b7a4b;
+  --warn: #a8620a;
+  --crit: #c1272d;
+
+  /* Shelf screen: a deliberate always-dark device look */
+  --k-bg: #0b1218;
+  --k-panel: #15212b;
+  --k-raise: #1c2b37;
+  --k-line: #273845;
+  --k-ink: #eef3f7;
+  --k-muted: #8a9aa8;
+  --k-accent: #3a8fdc;
+  --k-ok: #3ccf7e;
+  --k-warn: #f5a524;
+  --k-crit: #ff5a5a;
+  --bezel: #1a1f24;
+
+  --f-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --f-body: "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141a; --surface: #161f28; --sunk: #121a22; --ink: #e6edf3; --muted: #95a3b1;
+    --line: #283541; --accent: #5aa2e6; --accent-ink: #08121b; --ok: #5cc48a; --warn: #f0a540; --crit: #ff6b6b;
+    --bezel: #000000; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141a; --surface: #161f28; --sunk: #121a22; --ink: #e6edf3; --muted: #95a3b1;
+  --line: #283541; --accent: #5aa2e6; --accent-ink: #08121b; --ok: #5cc48a; --warn: #f0a540; --crit: #ff6b6b;
+  --bezel: #000000; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+h1, h2, h3 { font-family: var(--f-display); letter-spacing: 0.01em; text-wrap: balance; margin: 0; line-height: 1.1; }
+button { font-family: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num, .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* Top bar */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-in { max-width: 1240px; margin: 0 auto; padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.mark { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-family: var(--f-display); font-size: 18px; flex: none; position: relative; }
+.mark::after { content: ""; position: absolute; inset: 13px -5px; border: 2px solid var(--accent); border-radius: 50%; transform: rotate(-18deg); opacity: .55; }
+.brand { display: flex; flex-direction: column; line-height: 1.15; }
+.brand b { font-family: var(--f-display); font-size: 20px; letter-spacing: .02em; }
+.brand span { font-size: 12px; color: var(--muted); }
+.tabs { display: flex; gap: 4px; margin-left: auto; background: var(--sunk); padding: 4px; border-radius: 10px; border: 1px solid var(--line); flex-wrap: wrap; }
+.tabs a { text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px; padding: 7px 14px; border-radius: 7px; }
+.tabs a[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+
+main { max-width: 1240px; margin: 0 auto; padding-block: 24px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.view-head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; max-width: 72ch; }
+.view-head h1 { font-size: 34px; }
+.view-head p { margin: 0; color: var(--muted); }
+.eyebrow { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+
+/* ---------- Shelf screen view ---------- */
+.shelf-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+@media (max-width: 960px) { .shelf-layout { grid-template-columns: minmax(0, 1fr); } }
+.device { background: var(--bezel); border-radius: 22px; padding: 18px; box-shadow: 0 18px 40px -18px rgb(0 0 0 / .45); max-width: 100%; }
+.kwrap { position: relative; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 6px; background: var(--k-bg); }
+.kiosk { position: absolute; left: 0; top: 0; width: 1024px; height: 640px; transform-origin: 0 0; background: var(--k-bg); color: var(--k-ink); font-family: var(--f-body); display: flex; flex-direction: column; user-select: none; }
+.device-foot { display: flex; justify-content: space-between; color: #7d8790; font-size: 12px; padding: 10px 4px 0; gap: 12px; flex-wrap: wrap; }
+.device-foot .cam { display: inline-flex; align-items: center; gap: 6px; }
+.device-foot .cam i { width: 8px; height: 8px; border-radius: 50%; background: #3a4a56; display: inline-block; }
+.device-foot .cam i.live { background: var(--k-ok); box-shadow: 0 0 6px var(--k-ok); }
+
+.kbar { height: 46px; flex: none; display: flex; align-items: center; gap: 16px; padding: 0 20px; border-bottom: 1px solid var(--k-line); font-size: 14px; color: var(--k-muted); }
+.kbar b { color: var(--k-ink); font-family: var(--f-display); font-size: 18px; letter-spacing: .03em; }
+.kbar .sp { margin-left: auto; }
+.kbar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--k-ok); display: inline-block; margin-right: 6px; }
+.kbody { flex: 1; min-height: 0; display: flex; }
+.kbtn { background: var(--k-raise); color: var(--k-ink); border: 1px solid var(--k-line); border-radius: 12px; font-size: 18px; font-weight: 600; padding: 14px 20px; }
+.kbtn:active { transform: scale(.98); }
+.kbtn.primary { background: var(--k-accent); border-color: var(--k-accent); color: #fff; }
+.kbtn.ghost { background: transparent; }
+.ktitle { font-family: var(--f-display); font-size: 40px; line-height: 1.05; }
+.ksub { color: var(--k-muted); font-size: 18px; }
+
+/* idle */
+.idle { flex: 1; display: grid; grid-template-columns: 1fr 360px; }
+.idle-main { padding: 40px 44px; display: flex; flex-direction: column; gap: 22px; }
+.clock { font-family: var(--f-display); font-size: 96px; line-height: .9; }
+.scan { width: 150px; height: 150px; border-radius: 50%; border: 2px solid var(--k-line); position: relative; display: grid; place-items: center; }
+.scan::before { content: ""; position: absolute; inset: -8px; border-radius: 50%; border: 3px solid transparent; border-top-color: var(--k-accent); animation: spin 2.4s linear infinite; }
+.scan.busy::before { animation-duration: .7s; border-right-color: var(--k-accent); }
+.scan svg { width: 64px; height: 64px; color: var(--k-muted); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.demo { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+.demo small { color: var(--k-muted); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+.demo-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 10px; background: var(--k-panel); border: 1px dashed #3d5262; color: var(--k-ink); border-radius: 999px; padding: 6px 16px 6px 6px; font-size: 16px; font-weight: 600; }
+.ava { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--f-display); font-size: 15px; color: #fff; flex: none; }
+.idle-side { border-left: 1px solid var(--k-line); background: var(--k-panel); padding: 26px 24px; display: flex; flex-direction: column; gap: 12px; }
+.idle-side h3 { font-size: 20px; }
+.alert-row { display: flex; gap: 10px; align-items: center; padding: 10px 12px; background: var(--k-raise); border-radius: 10px; font-size: 15px; }
+.alert-row .bin { font-family: var(--f-mono); font-size: 13px; color: var(--k-muted); width: 30px; }
+.alert-row .q { margin-left: auto; font-family: var(--f-mono); font-weight: 500; }
+.tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 5px; }
+.tag.out { background: color-mix(in srgb, var(--k-crit) 22%, transparent); color: var(--k-crit); }
+.tag.low { background: color-mix(in srgb, var(--k-warn) 22%, transparent); color: var(--k-warn); }
+
+/* centred states */
+.center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding: 30px; }
+.bigava { width: 120px; height: 120px; font-size: 48px; }
+.conf { font-family: var(--f-mono); color: var(--k-ok); font-size: 15px; }
+
+/* pin */
+.pin { flex: 1; display: grid; grid-template-columns: 1fr 360px; gap: 40px; padding: 34px 44px; align-items: center; }
+.pin-dots { display: flex; gap: 14px; margin: 18px 0 8px; }
+.pin-dots i { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--k-muted); }
+.pin-dots i.f { background: var(--k-ink); border-color: var(--k-ink); }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pad button { height: 74px; font-size: 30px; font-family: var(--f-display); }
+.err { color: var(--k-crit); min-height: 24px; font-size: 16px; }
+
+/* job pick */
+.jobs { flex: 1; padding: 30px 44px; display: flex; flex-direction: column; gap: 16px; }
+.job-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.job { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; min-height: 96px; }
+.job .no { font-family: var(--f-mono); font-size: 14px; color: var(--k-accent); font-weight: 500; }
+.job .nm { font-size: 20px; }
+.job .wh { font-size: 14px; color: var(--k-muted); font-weight: 500; }
+
+/* take */
+.take { flex: 1; display: grid; grid-template-columns: 1fr 300px; min-height: 0; }
+.take-main { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.shelf-tabs { display: flex; gap: 8px; }
+.shelf-tabs button { flex: 1; background: var(--k-panel); border: 1px solid var(--k-line); color: var(--k-muted); border-radius: 10px; padding: 8px 6px; font-size: 14px; font-weight: 600; text-align: left; line-height: 1.2; }
+.shelf-tabs button b { display: block; font-family: var(--f-display); font-size: 20px; color: var(--k-ink); }
+.shelf-tabs button[aria-pressed="true"] { border-color: var(--k-accent); background: color-mix(in srgb, var(--k-accent) 18%, var(--k-panel)); }
+.bins { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr; gap: 10px; min-height: 0; }
+.bincard { position: relative; background: var(--k-panel); border: 1px solid var(--k-line); border-radius: 12px; padding: 10px 12px 12px; display: flex; flex-direction: column; text-align: left; color: var(--k-ink); overflow: hidden; }
+.bincard .id { font-family: var(--f-mono); font-size: 13px; color: var(--k-muted); display: flex; justify-content: space-between; align-items: center; }
+.bincard .nm { font-size: 15px; font-weight: 600; line-height: 1.2; margin-top: 4px; }
+.bincard .ct { font-family: var(--f-display); font-size: 46px; line-height: 1; margin-top: auto; }
+.bincard .mn { font-size: 12px; color: var(--k-muted); font-family: var(--f-mono); }
+.bincard .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--k-ok); }
+.bincard.low .bar { background: var(--k-warn); } .bincard.out .bar { background: var(--k-crit); }
+.bincard.out .ct { color: var(--k-crit); }
+.bincard.flash { animation: flash .6s ease-out; }
+@keyframes flash { from { box-shadow: inset 0 0 0 3px var(--k-accent); background: color-mix(in srgb, var(--k-accent) 25%, var(--k-panel)); } }
+.hint { font-size: 13px; color: var(--k-muted); display: flex; justify-content: space-between; }
+.take-side { border-left: 1px solid var(--k-line); background: var(--k-panel); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.who { display: flex; gap: 10px; align-items: center; }
+.who .nm { font-weight: 700; font-size: 17px; line-height: 1.2; }
+.who .jb { font-size: 13px; color: var(--k-muted); }
+.taken { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--k-line); padding-top: 10px; }
+.taken .empty { color: var(--k-muted); font-size: 15px; padding: 10px 0; }
+.trow { display: flex; align-items: center; gap: 8px; background: var(--k-raise); border-radius: 8px; padding: 7px 8px 7px 10px; font-size: 14px; }
+.trow .q { font-family: var(--f-mono); font-weight: 500; width: 30px; }
+.trow .n { flex: 1; min-width: 0; line-height: 1.2; }
+.trow button { width: 34px; height: 34px; border-radius: 8px; background: transparent; border: 1px solid var(--k-line); color: var(--k-ink); font-size: 20px; line-height: 1; }
+.tot { display: flex; justify-content: space-between; font-size: 15px; color: var(--k-muted); }
+.tot b { color: var(--k-ink); font-family: var(--f-mono); }
+
+.tick { width: 110px; height: 110px; border-radius: 50%; background: color-mix(in srgb, var(--k-ok) 18%, transparent); display: grid; place-items: center; color: var(--k-ok); }
+.tick svg { width: 56px; height: 56px; }
+.notice { background: color-mix(in srgb, var(--k-warn) 14%, var(--k-panel)); border: 1px solid color-mix(in srgb, var(--k-warn) 40%, transparent); color: var(--k-ink); border-radius: 12px; padding: 12px 18px; font-size: 16px; max-width: 620px; }
+
+/* notes beside the device */
+.notes { display: flex; flex-direction: column; gap: 14px; }
+.note-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.note-card h3 { font-size: 20px; margin-bottom: 6px; }
+.note-card p { margin: 0; color: var(--muted); font-size: 14px; }
+.note-card ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--muted); }
+.note-card ol b { color: var(--ink); }
+.note-card li.on b { color: var(--accent); }
+.note-card li.on { color: var(--ink); }
+
+/* ---------- Dashboard ---------- */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+@media (max-width: 860px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.kpi .l { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.kpi .v { font-family: var(--f-display); font-size: 36px; line-height: 1.1; }
+.kpi .s { font-size: 13px; color: var(--muted); }
+.kpi.warn .v { color: var(--warn); } .kpi.crit .v { color: var(--crit); } .kpi.ok .v { color: var(--ok); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+@media (max-width: 960px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-width: 0; display: flex; flex-direction: column; }
+.panel-h { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.panel-h h2 { font-size: 22px; }
+.panel-h .sp { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.panel-b { padding: 6px 16px 14px; min-width: 0; }
+.scroll { overflow-x: auto; }
+.btn { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; font-size: 14px; font-weight: 600; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; padding: 10px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.r, th.r { text-align: right; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
+.pill.low { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+.pill.out { background: color-mix(in srgb, var(--crit) 14%, transparent); color: var(--crit); }
+.pill.info { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.meter { width: 90px; height: 6px; background: var(--sunk); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; display: inline-block; vertical-align: middle; }
+.meter i { display: block; height: 100%; background: var(--ok); }
+.meter i.low { background: var(--warn); } .meter i.out { background: var(--crit); }
+.feed { display: flex; flex-direction: column; }
+.ev { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.ev:last-child { border-bottom: 0; }
+.ev .t { font-family: var(--f-mono); font-size: 13px; color: var(--muted); padding-top: 2px; }
+.ev .h { font-weight: 600; }
+.ev .d { font-size: 13px; color: var(--muted); }
+.ev.flag { background: color-mix(in srgb, var(--crit) 7%, transparent); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+.supplier { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 12px 0 4px; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.filters input { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 7px 10px; font: inherit; font-size: 14px; width: 200px; max-width: 100%; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { background: var(--surface); color: var(--muted); border: 0; padding: 7px 12px; font-size: 13px; font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.yes { color: var(--ok); font-weight: 600; } .no { color: var(--muted); }
+.example { font-size: 12px; color: var(--muted); }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; z-index: 20; max-width: calc(100% - 32px); }
+
+/* ---------- Brief ---------- */
+.brief { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 32px; align-items: start; }
+@media (max-width: 860px) { .brief { grid-template-columns: minmax(0, 1fr); } .toc { display: none; } }
+.toc { position: sticky; top: calc(80px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.toc a { color: var(--muted); text-decoration: none; }
+.toc a:hover { color: var(--accent); }
+.doc { max-width: 760px; display: flex; flex-direction: column; gap: 34px; min-width: 0; }
+.doc section { display: flex; flex-direction: column; gap: 10px; }
+.doc h2 { font-size: 28px; }
+.doc h3 { font-size: 20px; margin-top: 6px; }
+.doc p, .doc li { color: var(--ink); max-width: 68ch; }
+.doc p { margin: 0; }
+.doc ul, .doc ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.doc .muted { color: var(--muted); }
+.callout { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+.callout.warn { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); background: color-mix(in srgb, var(--warn) 7%, var(--surface)); }
+.callout b.h { font-family: var(--f-display); font-size: 18px; letter-spacing: .02em; }
+.flow { display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap; }
+.flow .box { flex: 1 1 140px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--muted); min-width: 0; }
+.flow .box b { display: block; color: var(--ink); font-size: 15px; }
+.flow .arr { align-self: center; color: var(--muted); font-family: var(--f-mono); }
+@media (max-width: 640px) { .flow .arr { display: none; } }
+.stage { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+.stage .w { font-family: var(--f-display); font-size: 18px; color: var(--accent); }
+.stage p { color: var(--muted); font-size: 14px; }
+tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
+@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="mark" aria-hidden="true">S</div>
+    <div class="brand"><b>Stock Shelves</b><span>Saturn Electrical · concept mockup</span></div>
+    <nav class="tabs" aria-label="Views">
+      <a href="#shelf" data-view="shelf">Shelf screen</a>
+      <a href="#dashboard" data-view="dashboard">Office dashboard</a>
+      <a href="#brief" data-view="brief">Project brief</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- ===================== SHELF SCREEN ===================== -->
+  <section id="v-shelf">
+    <div class="view-head">
+      <span class="eyebrow">10" touchscreen on the rack</span>
+      <h1>What the sparky sees</h1>
+      <p>Click through it like a tradie would: walk up, get recognised, pick the job, grab gear, walk off. In the real thing the scales detect what's lifted out. Here you tap a bin to simulate it.</p>
+    </div>
+    <div class="shelf-layout">
+      <div>
+        <div class="device">
+          <div class="kwrap" id="kwrap"><div class="kiosk" id="kiosk"></div></div>
+          <div class="device-foot"><span class="cam"><i id="camdot"></i> Camera <span id="camtxt">watching for faces</span></span><span>Raspberry Pi · 10.1" 1280×800</span></div>
+        </div>
+      </div>
+      <aside class="notes">
+        <div class="note-card">
+          <h3>Behind the screen</h3>
+          <ol id="steps">
+            <li data-s="idle"><b>Waiting.</b> The camera looks for a face. Nothing is recorded until someone walks up.</li>
+            <li data-s="who"><b>Sign in.</b> Face matched on the Pi itself, no cloud. If it can't tell, they use a PIN or key tag.</li>
+            <li data-s="job"><b>Pick the job.</b> Today's jobs come from the AroFlo schedule for that person.</li>
+            <li data-s="take"><b>Grab gear.</b> Each bin's scale sees the weight drop and turns it into a count.</li>
+            <li data-s="done"><b>Walk away.</b> Signs out after 60 s still. Usage gets logged to the job and queued for AroFlo.</li>
+          </ol>
+        </div>
+        <div class="note-card">
+          <h3>Try this</h3>
+          <p>Take enough Double GPOs (A1) to drop below the minimum, then check the Office dashboard. It'll be on the reorder list. Or tap "Someone we don't know" to see the PIN fallback.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <section id="v-dashboard" hidden>
+    <div class="view-head">
+      <span class="eyebrow">Web app · office, phone or laptop</span>
+      <h1>Workshop rack 1</h1>
+      <p>Live stock, what needs ordering, and who took what for which job. Everything here is example data and updates when you use the shelf screen.</p>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid2">
+      <div class="panel">
+        <div class="panel-h"><h2>Reorder list</h2><div class="sp"><button class="btn primary" id="po-btn" type="button">Create POs in AroFlo</button></div></div>
+        <div class="panel-b" id="reorder"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h2>Today's activity</h2><div class="sp"><span class="example">Thu 31 Oct</span></div></div>
+        <div class="panel-b"><div class="feed" id="feed"></div></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-h"><h2>Stock on hand</h2>
+        <div class="sp filters">
+          <input id="q" type="search" placeholder="Search item or bin" aria-label="Search stock">
+          <div class="seg" id="seg">
+            <button type="button" data-f="all" aria-pressed="true">All</button>
+            <button type="button" data-f="low" aria-pressed="false">Low</button>
+            <button type="button" data-f="out" aria-pressed="false">Out</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel-b scroll"><table id="stock"></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h2>Staff sign-in</h2><div class="sp"><button class="btn" type="button" data-toast="Enrolment opens on the shelf screen: stand in front of the camera for 10 seconds.">Enrol a face</button></div></div>
+      <div class="panel-b scroll"><table id="staff"></table></div>
+    </div>
+  </section>
+
+  <!-- ===================== BRIEF ===================== -->
+  <section id="v-brief" hidden>
+    <div class="view-head">
+      <span class="eyebrow">Project brief · draft 1 · 31 Oct 2026</span>
+      <h1>Saturn Stock Shelves</h1>
+      <p>A weighing shelf for the workshop that counts gear, knows who took it and for which job, and tells the office when to reorder. Written so it can be handed to a maker or developer.</p>
+    </div>
+    <div class="brief">
+      <nav class="toc" aria-label="Brief sections">
+        <a href="#b-why">Why build it</a><a href="#b-how">How it works</a><a href="#b-parts">Parts list</a>
+        <a href="#b-acc">Counting accuracy</a><a href="#b-face">Facial recognition</a><a href="#b-aroflo">AroFlo link</a>
+        <a href="#b-stages">Build stages</a><a href="#b-open">Open questions</a>
+      </nav>
+      <div class="doc">
+        <section id="b-why">
+          <h2>Why build it</h2>
+          <ul>
+            <li><b>Nobody counts stock by hand.</b> The shelf always knows what's on it.</li>
+            <li><b>Reordering stops depending on Nick.</b> Low stock lands on a reorder list for the office to action.</li>
+            <li><b>Materials get billed.</b> Gear is logged against the job when it leaves the shelf, so it's not forgotten on the invoice.</li>
+            <li><b>Accountability without nagging.</b> Every removal has a name and a job, or it gets flagged.</li>
+          </ul>
+        </section>
+
+        <section id="b-how">
+          <h2>How it works</h2>
+          <div class="flow">
+            <div class="box"><b>50 bins + scales</b>One load cell under each bin</div><span class="arr">→</span>
+            <div class="box"><b>5 shelf controllers</b>ESP32 per shelf, reads 10 scales</div><span class="arr">→</span>
+            <div class="box"><b>Rack computer</b>Raspberry Pi, 10" touchscreen, camera</div><span class="arr">→</span>
+            <div class="box"><b>Saturn web app</b>Dashboard, alerts, history</div><span class="arr">↔</span>
+            <div class="box"><b>AroFlo</b>Jobs in, materials and POs out</div>
+          </div>
+          <ul>
+            <li><b>Layout:</b> 5 shelves × 10 bins. At 100 mm wide plus gaps, 10 bins fit a standard 1200 mm shelf.</li>
+            <li><b>Counting:</b> each item has a set unit weight. Count = (scale reading − empty bin weight) ÷ unit weight, rounded.</li>
+            <li><b>Wiring:</b> one controller per shelf keeps it to 5 cables back to the Pi, not 50.</li>
+            <li><b>Offline-safe:</b> the Pi keeps working if the internet drops and syncs later.</li>
+            <li><b>Web side:</b> sits alongside the existing Saturn API (same Railway database that already pulls AroFlo purchase history, so unit costs come for free).</li>
+          </ul>
+        </section>
+
+        <section id="b-parts">
+          <h2>Parts list</h2>
+          <p class="muted">Rough AUD prices, inc GST, from local and online electronics suppliers. Good enough to budget with, not a quote.</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Part</th><th class="r">Qty</th><th class="r">Each</th><th class="r">Total</th></tr></thead>
+              <tbody>
+                <tr><td>Load cell, 5 kg bar type</td><td class="r num">55</td><td class="r num">$6</td><td class="r num">$330</td></tr>
+                <tr><td>HX711 load cell amplifier board</td><td class="r num">55</td><td class="r num">$4</td><td class="r num">$220</td></tr>
+                <tr><td>ESP32 controller board (1 per shelf + spares)</td><td class="r num">7</td><td class="r num">$18</td><td class="r num">$126</td></tr>
+                <tr><td>Scale platforms (aluminium or 3D-printed plate + mounts)</td><td class="r num">50</td><td class="r num">$5</td><td class="r num">$250</td></tr>
+                <tr><td>Plastic bins, 100 × 100 × 400</td><td class="r num">50</td><td class="r num">$8</td><td class="r num">$400</td></tr>
+                <tr><td>Raspberry Pi 5 (8 GB) + case, cooler, SD</td><td class="r num">1</td><td class="r num">$200</td><td class="r num">$200</td></tr>
+                <tr><td>10.1" touchscreen, 1280 × 800</td><td class="r num">1</td><td class="r num">$180</td><td class="r num">$180</td></tr>
+                <tr><td>Camera module (wide angle)</td><td class="r num">1</td><td class="r num">$60</td><td class="r num">$60</td></tr>
+                <tr><td>USB NFC reader + key tags (PIN/tag fallback)</td><td class="r num">1</td><td class="r num">$60</td><td class="r num">$60</td></tr>
+                <tr><td>12 V / 5 V power supplies, cabling, connectors, enclosure</td><td class="r num">1</td><td class="r num">$250</td><td class="r num">$250</td></tr>
+                <tr><td>Steel shelving, 5 tier × 1200 mm (skip if you have one)</td><td class="r num">1</td><td class="r num">$350</td><td class="r num">$350</td></tr>
+              </tbody>
+              <tfoot><tr><td>Hardware total</td><td></td><td></td><td class="r num">≈ $2,430</td></tr></tfoot>
+            </table>
+          </div>
+          <div class="callout warn">
+            <b class="h">Check the bin size</b>
+            <p>A double GPO face is about 115 × 73 mm, so in a 100 × 100 bin it only fits on its side. That's roughly 9–12 per bin, fewer if they're boxed. Consider 150 mm wide bins for GPOs and switches and keep 100 mm for breakers and small stuff. The scales don't care if bin sizes are mixed.</p>
+          </div>
+          <p class="muted">Optional extra, about $150: an LED strip under each bin, so a search for "RCBO 20A" lights up the right bin.</p>
+        </section>
+
+        <section id="b-acc">
+          <h2>Counting accuracy</h2>
+          <ul>
+            <li><b>Great for:</b> anything over about 20 g each. GPOs (~110 g), switches (~65 g), breakers (~110–160 g), downlights (~210 g).</li>
+            <li><b>Not for single tiny items:</b> screws, lugs, cable ties. Store those in bags or boxes and count the bag.</li>
+            <li><b>Temperature:</b> a tin shed in Warwick swings from frost to 40°C, which makes load cells drift. The software re-zeroes when it knows a bin is empty, and a monthly 2-minute recalibrate keeps it honest.</li>
+            <li><b>Mixed bins don't work.</b> One product per bin, always. That's the main rule for staff.</li>
+          </ul>
+        </section>
+
+        <section id="b-face">
+          <h2>Facial recognition</h2>
+          <p>Doable on a Raspberry Pi with open-source tools. Sign-in takes under a second. Things to get right:</p>
+          <ul>
+            <li><b>Keep it local.</b> Store face "templates" (a string of numbers), not photos, on the Pi only. Nothing goes to the cloud.</li>
+            <li><b>Always have a fallback.</b> Caps, sunnies, masks and bad lighting will beat it sometimes. A PIN or NFC key tag on the keyring covers it.</li>
+            <li><b>Unattributed removals.</b> If weight leaves a bin and nobody is signed in, take one snapshot and flag it on the dashboard. That's the anti-walk-off feature, and it's less creepy than recording all day.</li>
+          </ul>
+          <div class="callout warn">
+            <b class="h">Privacy: get advice before switching it on</b>
+            <p>Face data counts as biometric "sensitive information" under the Australian Privacy Act. The regulator has come down hard on retailers using facial recognition. Small-business and employee-record exemptions might apply to Saturn, but the law is being reformed. I'm not a lawyer, so run it past your accountant or an IR adviser. The safe setup either way:</p>
+            <ul>
+              <li>Written consent from each staff member, with the PIN/tag option for anyone who says no</li>
+              <li>A sign on the rack saying the camera is used for sign-in</li>
+              <li>Delete someone's face data the day they leave</li>
+              <li>A line about it in your staff handbook / SOP</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="b-aroflo">
+          <h2>AroFlo link</h2>
+          <ul>
+            <li><b>Jobs in:</b> pull each tech's scheduled jobs for today, so the screen offers the right ones.</li>
+            <li><b>Materials out:</b> push what was taken onto the job as materials, so it ends up on the invoice.</li>
+            <li><b>Reorders:</b> the reorder list becomes draft purchase orders per supplier for the office to approve.</li>
+            <li><b>Item list and costs:</b> match each bin to its AroFlo inventory item and supplier part number.</li>
+          </ul>
+          <p class="muted">To confirm: whether AroFlo's API lets us <em>write</em> materials and POs (reading is already working in the Saturn API). If not, it falls back to a CSV export the office imports.</p>
+        </section>
+
+        <section id="b-stages">
+          <h2>Build stages</h2>
+          <div>
+            <div class="stage"><span class="w">Stage 1</span><div><b>One-shelf prototype</b><p>10 bins, scales, a laptop screen. No camera, no AroFlo. Run it for a month and prove the counts stay accurate through hot and cold days. About $500 in parts.</p></div></div>
+            <div class="stage"><span class="w">Stage 2</span><div><b>Full rack + dashboard</b><p>All 50 bins, touchscreen, PIN/key tag sign-in, web dashboard, low-stock email to the office.</p></div></div>
+            <div class="stage"><span class="w">Stage 3</span><div><b>Face sign-in + AroFlo jobs</b><p>Camera, staff enrolment, consent forms, today's jobs pulled from AroFlo, unattributed-removal snapshots.</p></div></div>
+            <div class="stage"><span class="w">Stage 4</span><div><b>Close the loop</b><p>Materials posted to AroFlo jobs automatically, draft POs per supplier, monthly usage reports per tech and per job.</p></div></div>
+          </div>
+        </section>
+
+        <section id="b-open">
+          <h2>Open questions</h2>
+          <ul>
+            <li>Who builds the hardware: you, an apprentice who likes tinkering, or a local maker or electronics tech?</li>
+            <li>Which 50 items go on the rack? Best pick is high-use, high-value and easy to forget to bill.</li>
+            <li>Who owns the reorder list day to day, so it's not you?</li>
+            <li>Does the rack get used after hours, and does it need a lock?</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  // ---------- Example data ----------
+  const SHELVES = { A: 'Power points', B: 'Switches & data', C: 'Protection', D: 'Lighting', E: 'Fittings' };
+  // [name, unit g, unit $ ex GST, on hand, min, supplier]
+  const RAW = {
+    A: [['Double GPO 10A white',110,9.5,14,10,'MMEM'],['Single GPO 10A white',85,7.8,9,6,'MMEM'],['Double GPO + USB A/C',130,39,4,4,'MMEM'],['Weatherproof double GPO',220,34,3,2,'MMEM'],['Single GPO 15A',95,14,2,3,'MMEM'],
+        ['Double GPO 10A black',110,13,6,4,'MMEM'],['Switch 1-gang',60,6.5,18,10,'MMEM'],['Switch 2-gang',68,9,11,8,'MMEM'],['Switch 3-gang',75,12,5,4,'MMEM'],['Blank plate',40,4,8,4,'MMEM']],
+    B: [['LED dimmer, rotary 350W',120,48,3,3,'Haymans'],['Fan speed controller',120,52,4,2,'Haymans'],['Push-button LED dimmer',80,65,2,2,'Haymans'],['Architrave switch',45,11,6,4,'MMEM'],['Weatherproof switch',180,21,3,2,'MMEM'],
+        ['TV / coax outlet',70,12,5,3,'MMEM'],['Data outlet Cat6',65,14,7,4,'MMEM'],['Mounting bracket',25,2.2,40,25,'Haymans'],['Flush box',60,3.5,12,10,'Haymans'],['Surface mount block',90,4.5,9,6,'Haymans']],
+    C: [['MCB 1P 16A',110,11,12,6,'Rexel'],['MCB 1P 20A',110,11,10,6,'Rexel'],['MCB 1P 32A',115,12,4,4,'Rexel'],['RCBO 1P 16A 30mA',160,38,9,8,'Rexel'],['RCBO 1P 20A 30mA',160,38,3,8,'Rexel'],
+        ['RCBO 1P 32A 30mA',165,40,4,3,'Rexel'],['Main switch 63A 2P',230,28,2,2,'Rexel'],['Surge diverter',190,85,1,2,'Rexel'],['Busbar link',30,6,7,4,'Rexel'],['DIN blanks (bag of 10)',60,8,5,3,'Rexel']],
+    D: [['LED downlight 10W tri-colour',210,14,22,20,'Haymans'],['LED downlight 13W',260,18,6,8,'Haymans'],['Smoke alarm 240V interconnect',280,32,7,6,'Haymans'],['Smoke alarm 10-yr lithium',230,48,3,4,'Haymans'],['Batten holder',70,6,10,6,'Haymans'],
+        ['Plug base (PB)',90,9,8,6,'Haymans'],['Motion sensor 360°',150,38,0,2,'Haymans'],['GU10 LED lamp',45,5,24,12,'Haymans'],['B22 LED globe 9W',55,4,18,12,'Haymans'],['Downlight driver (spare)',95,16,3,2,'Haymans']],
+    E: [['Wago 221-413 (box of 50)',190,28,3,2,'Rexel'],['Wago 221-415 (box of 25)',140,22,2,2,'Rexel'],['Cable glands 20mm (bag of 10)',80,9,5,4,'Rexel'],['Saddles 20mm (bag of 50)',160,12,4,3,'Rexel'],['Conduit couplers 20mm (bag of 10)',60,6,6,4,'Rexel'],
+        ['Junction box 4-terminal',75,4.5,11,8,'Rexel'],['Cable ties 300mm (bag of 100)',230,7,4,3,'Rexel'],['Insulation tape (roll)',35,1.6,15,10,'Rexel'],['Earth stake clamp',60,4,6,4,'Rexel'],['Heatshrink pack',90,14,2,2,'Rexel']]
+  };
+  const items = [];
+  for (const s of Object.keys(RAW)) RAW[s].forEach((r, i) => items.push({ bin: s + (i + 1), shelf: s, name: r[0], g: r[1], cost: r[2], count: r[3], min: r[4], supplier: r[5] }));
+  const byBin = Object.fromEntries(items.map(i => [i.bin, i]));
+
+  const staff = [
+    { id: 'jake', name: 'Jake Morrison', first: 'Jake', role: 'Electrician', col: '#2f86d6', face: true, consent: true, tag: true, pin: '1234' },
+    { id: 'mia', name: 'Mia Tran', first: 'Mia', role: '3rd-year apprentice', col: '#c2569b', face: true, consent: true, tag: true, pin: '2580' },
+    { id: 'tom', name: 'Tom Walsh', first: 'Tom', role: 'Electrician', col: '#d9822b', face: false, consent: false, tag: true, pin: '0000' },
+    { id: 'sam', name: 'Sam Kelly', first: 'Sam', role: 'Leading hand', col: '#3a9d6a', face: true, consent: true, tag: true, pin: '4321' },
+    { id: 'riley', name: 'Riley Cooper', first: 'Riley', role: '1st-year apprentice', col: '#7a63d4', face: true, consent: true, tag: false, pin: '1111' },
+    { id: 'nick', name: 'Nick White', first: 'Nick', role: 'Owner', col: '#185FA5', face: true, consent: true, tag: true, pin: '9999' }
+  ];
+  const sById = Object.fromEntries(staff.map(s => [s.id, s]));
+  const jobs = [
+    { no: 'J10482', name: 'Kennedy kitchen reno', where: 'Rosenthal Heights', who: ['jake', 'mia'] },
+    { no: 'J10490', name: 'Switchboard upgrade', where: 'Warwick Showgrounds', who: ['jake', 'sam', 'riley'] },
+    { no: 'J10495', name: 'Allora Bakery, new GPOs', where: 'Allora', who: ['tom', 'mia', 'riley'] },
+    { no: 'J10501', name: 'Lighting fault', where: 'Stanthorpe winery', who: ['sam', 'tom', 'nick'] },
+    { no: 'J10507', name: 'Smoke alarm compliance', where: 'Killarney rental', who: ['riley', 'jake', 'nick'] }
+  ];
+  const log = [
+    { t: '06:48', who: 'sam', how: 'Face', job: 'J10490', lines: [['C4', 2], ['C1', 3], ['C7', 1]] },
+    { t: '07:05', who: 'mia', how: 'Face', job: 'J10482', lines: [['A1', 4], ['A7', 2], ['D1', 6]] },
+    { t: '07:12', flag: true, lines: [['C5', 2]] },
+    { t: '07:31', who: 'tom', how: 'Key tag', job: 'J10495', lines: [['A1', 3], ['B9', 3]] },
+    { t: '09:56', who: 'riley', how: 'Face', job: 'J10507', lines: [['D3', 2], ['D4', 1]] }
+  ];
+  const lastAroflo = '10:39';
+
+  // ---------- Helpers ----------
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const money = n => '$' + n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const status = i => i.count === 0 ? 'out' : i.count < i.min ? 'low' : 'ok';
+  const ava = (s, cls = '') => `<span class="ava ${cls}" style="background:${s.col}">${s.first[0]}</span>`;
+  const now = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  const toastEl = $('#toast'); let toastT;
+  function toast(msg) { toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => toastEl.hidden = true, 3200); }
+  document.addEventListener('click', e => { const b = e.target.closest('[data-toast]'); if (b) toast(b.dataset.toast); });
+
+  // ---------- Views ----------
+  const VIEWS = ['shelf', 'dashboard', 'brief'];
+  function route() {
+    const h = location.hash.slice(1);
+    let v = VIEWS.includes(h) ? h : (h.startsWith('b-') ? 'brief' : 'shelf');
+    VIEWS.forEach(x => { $('#v-' + x).hidden = x !== v; });
+    document.querySelectorAll('.tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.view === v ? 'page' : 'false'));
+    if (v === 'dashboard') renderDash();
+    if (v === 'shelf') fit();
+    if (h.startsWith('b-')) { const el = document.getElementById(h); if (el) el.scrollIntoView(); } else window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', route);
+
+  // ---------- Kiosk ----------
+  const kiosk = $('#kiosk'), kwrap = $('#kwrap');
+  function fit() { const s = kwrap.clientWidth / 1024; if (s) kiosk.style.transform = `scale(${s})`; }
+  new ResizeObserver(fit).observe(kwrap);
+
+  let K = { screen: 'idle', user: null, how: null, job: null, shelf: 'A', taken: {}, pin: '', err: '' };
+  let timers = [];
+  const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+  const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+  function go(patch) { Object.assign(K, patch); renderKiosk(); }
+
+  const kbar = () => `<div class="kbar"><b>SATURN STOCK</b><span>Workshop rack 1</span><span class="sp"><span class="dot"></span>AroFlo synced ${lastAroflo}</span><span class="mono" style="color:var(--k-ink)">${now()}</span></div>`;
+  const faceSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="9.5" cy="10" r=".6" fill="currentColor"/><circle cx="14.5" cy="10" r=".6" fill="currentColor"/><path d="M9.5 15c1.4 1 3.6 1 5 0"/></svg>`;
+  const tickSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+
+  function screenIdle() {
+    const alerts = items.filter(i => status(i) !== 'ok').sort((a, b) => a.count / a.min - b.count / b.min).slice(0, 6);
+    const d = new Date();
+    return `<div class="idle">
+      <div class="idle-main">
+        <div><div class="clock">${now()}</div><div class="ksub">${d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
+        <div style="display:flex;gap:26px;align-items:center">
+          <div class="scan">${faceSvg}</div>
+          <div><div class="ktitle">Step up to sign in</div><div class="ksub">Look at the camera, or tap below for PIN / key tag</div></div>
+        </div>
+        <div class="demo">
+          <small>Demo: who walks up?</small>
+          <div class="demo-row">
+            ${['jake', 'mia', 'sam'].map(id => `<button class="chip" data-face="${id}">${ava(sById[id])}${sById[id].first}</button>`).join('')}
+            <button class="chip" data-face="unknown"><span class="ava" style="background:#4a5966">?</span>Someone we don't know</button>
+            <button class="kbtn ghost" data-go="pin" style="font-size:16px;padding:8px 16px">Use PIN or key tag</button>
+          </div>
+        </div>
+      </div>
+      <div class="idle-side">
+        <h3>Running low</h3>
+        ${alerts.map(i => `<div class="alert-row"><span class="bin">${i.bin}</span><span>${esc(i.name)}</span><span class="q">${i.count}</span><span class="tag ${status(i)}">${status(i) === 'out' ? 'Out' : 'Low'}</span></div>`).join('')}
+        <div class="ksub" style="font-size:14px;margin-top:auto">Office has been notified. Grab from the back store if you need it.</div>
+      </div></div>`;
+  }
+  function screenScan() {
+    return `<div class="center"><div class="scan busy">${faceSvg}</div><div class="ktitle">Hang on…</div><div class="ksub">Checking who you are</div></div>`;
+  }
+  function screenHello() {
+    const s = K.user;
+    return `<div class="center">${ava(s, 'bigava')}<div class="ktitle">G'day ${s.first}</div><div class="conf">${K.how === 'Face' ? 'Face match 97% · signed in' : K.how + ' · signed in'}</div></div>`;
+  }
+  function screenPin() {
+    const dots = [0, 1, 2, 3].map(i => `<i class="${i < K.pin.length ? 'f' : ''}"></i>`).join('');
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Back', '0', 'Cancel'];
+    return `<div class="pin">
+      <div>
+        <div class="ktitle">${K.err === 'face' ? "Sorry, didn't recognise you" : 'Enter your PIN'}</div>
+        <div class="ksub" style="margin-top:8px">Type your 4-digit PIN, or tap your key tag on the reader under the screen.</div>
+        <div class="pin-dots">${dots}</div>
+        <div class="err">${K.err && K.err !== 'face' ? esc(K.err) : ''}</div>
+        <div class="ksub" style="font-size:14px">Demo PINs: Jake 1234 · Mia 2580 · Tom 0000</div>
+        <button class="kbtn" data-tag="tom" style="margin-top:14px;font-size:16px">Demo: tap Tom's key tag</button>
+      </div>
+      <div class="pad">${keys.map(k => `<button class="kbtn" data-key="${k}" style="${isNaN(k) ? 'font-size:18px;font-family:var(--f-body)' : ''}">${k}</button>`).join('')}</div>
+    </div>`;
+  }
+  function screenJob() {
+    const s = K.user;
+    const mine = jobs.filter(j => j.who.includes(s.id)).slice(0, 3);
+    return `<div class="jobs">
+      <div><div class="ktitle">G'day ${s.first}. What's this for?</div><div class="ksub">Your jobs today, from AroFlo</div></div>
+      <div class="job-list">
+        ${mine.map(j => `<button class="kbtn job" data-job="${j.no}"><span class="no">${j.no}</span><span class="nm">${esc(j.name)}</span><span class="wh">${esc(j.where)}</span></button>`).join('')}
+        <button class="kbtn job" data-job="VAN"><span class="no">VAN RESTOCK</span><span class="nm">Topping up my van</span><span class="wh">Not billed to a job</span></button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:auto"><button class="kbtn ghost" data-toast="Would open a search of all open AroFlo jobs.">Find another job</button><button class="kbtn ghost" data-go="idle">Not me, sign out</button></div>
+    </div>`;
+  }
+  function jobLabel(no) { if (no === 'VAN') return 'Van restock'; const j = jobs.find(x => x.no === no); return j ? `${j.no} · ${j.name}` : no; }
+  function screenTake() {
+    const s = K.user;
+    const shelfItems = items.filter(i => i.shelf === K.shelf);
+    const takenRows = Object.entries(K.taken).filter(([, q]) => q > 0);
+    const total = takenRows.reduce((a, [b, q]) => a + byBin[b].cost * q, 0);
+    return `<div class="take">
+      <div class="take-main">
+        <div class="shelf-tabs">${Object.entries(SHELVES).map(([k, v]) => `<button data-shelf="${k}" aria-pressed="${k === K.shelf}"><b>${k}</b>${v}</button>`).join('')}</div>
+        <div class="bins">${shelfItems.map(i => `<button class="bincard ${status(i)}" data-bin="${i.bin}">
+            <span class="id"><span>${i.bin}</span><span>${((i.count * i.g) / 1000).toFixed(2)} kg</span></span>
+            <span class="nm">${esc(i.name)}</span>
+            <span class="ct">${i.count}</span><span class="mn">min ${i.min}</span><span class="bar"></span></button>`).join('')}</div>
+        <div class="hint"><span>Demo: tap a bin to lift one out</span><span>Signs out after 60 s with nothing moving</span></div>
+      </div>
+      <div class="take-side">
+        <div class="who">${ava(s)}<div><div class="nm">${esc(s.name)}</div><div class="jb">${esc(jobLabel(K.job))}</div></div></div>
+        <div class="taken">${takenRows.length ? takenRows.map(([b, q]) => `<div class="trow"><span class="q">${q}×</span><span class="n">${esc(byBin[b].name)}</span><button data-back="${b}" aria-label="Put one back">−</button></div>`).join('') : '<div class="empty">Grab what you need. It shows up here as the scales see it.</div>'}</div>
+        <div class="tot"><span>Value to job</span><b>${money(total)}</b></div>
+        <button class="kbtn primary" data-done style="padding:16px">Done, sign me out</button>
+        <button class="kbtn ghost" data-switch style="font-size:15px;padding:10px">Change job</button>
+      </div></div>`;
+  }
+  function screenDone() {
+    const r = K.result;
+    const n = r.lines.reduce((a, l) => a + l[1], 0);
+    return `<div class="center">
+      <div class="tick">${tickSvg}</div>
+      <div class="ktitle">${n ? `${n} item${n > 1 ? 's' : ''} logged` : 'Nothing taken'}</div>
+      <div class="ksub">${n ? `To ${esc(jobLabel(r.job))}. ${r.job === 'VAN' ? 'Recorded against your van.' : 'Sending to AroFlo now.'}` : 'Signed out. See you next time.'}</div>
+      ${r.low.length ? `<div class="notice">Heads up: ${r.low.map(i => `<b>${esc(i.name)}</b> (${i.count} left)`).join(', ')} ${r.low.length > 1 ? 'are' : 'is'} now below minimum. Added to the office reorder list.</div>` : ''}
+      <div class="ksub" style="font-size:14px">Back to start in a few seconds</div>
+    </div>`;
+  }
+
+  function renderKiosk() {
+    const map = { idle: screenIdle, scan: screenScan, hello: screenHello, pin: screenPin, job: screenJob, take: screenTake, done: screenDone };
+    kiosk.innerHTML = kbar() + `<div class="kbody">${map[K.screen]()}</div>`;
+    const stepFor = { idle: 'idle', scan: 'who', hello: 'who', pin: 'who', job: 'job', take: 'take', done: 'done' }[K.screen];
+    document.querySelectorAll('#steps li').forEach(li => li.classList.toggle('on', li.dataset.s === stepFor));
+    const live = ['scan', 'idle'].includes(K.screen);
+    $('#camdot').classList.toggle('live', K.screen === 'scan');
+    $('#camtxt').textContent = K.screen === 'scan' ? 'matching face' : live ? 'watching for faces' : 'off while signed in';
+  }
+
+  function signIn(user, how) {
+    clearTimers();
+    go({ screen: 'hello', user, how, taken: {}, shelf: 'A', pin: '', err: '' });
+    later(() => go({ screen: 'job' }), 1300);
+  }
+  function finish() {
+    clearTimers();
+    const lines = Object.entries(K.taken).filter(([, q]) => q > 0);
+    const low = lines.map(([b]) => byBin[b]).filter(i => status(i) !== 'ok');
+    if (lines.length) log.push({ t: now(), who: K.user.id, how: K.how, job: K.job, lines, fresh: true });
+    go({ screen: 'done', result: { lines, job: K.job, low } });
+    later(() => go({ screen: 'idle', user: null, job: null, taken: {} }), 6000);
+  }
+
+  kiosk.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    const d = t.dataset;
+    if (d.face) {
+      clearTimers(); go({ screen: 'scan' });
+      later(() => {
+        if (d.face === 'unknown') go({ screen: 'pin', err: 'face', pin: '' });
+        else signIn(sById[d.face], 'Face');
+      }, 1100);
+    } else if (d.go) { clearTimers(); go({ screen: d.go, pin: '', err: '', user: d.go === 'idle' ? null : K.user }); }
+    else if (d.tag) signIn(sById[d.tag], 'Key tag');
+    else if (d.key) {
+      if (d.key === 'Cancel') return go({ screen: 'idle', pin: '', err: '' });
+      if (d.key === 'Back') return go({ pin: K.pin.slice(0, -1) });
+      if (K.pin.length >= 4) return;
+      const pin = K.pin + d.key;
+      if (pin.length < 4) return go({ pin, err: K.err === 'face' ? 'face' : '' });
+      const s = staff.find(x => x.pin === pin);
+      if (s) { go({ pin }); later(() => signIn(s, 'PIN'), 250); }
+      else { go({ pin }); later(() => go({ pin: '', err: "That PIN doesn't match anyone. Try again." }), 350); }
+    }
+    else if (d.job) go({ screen: 'take', job: d.job });
+    else if (d.shelf) go({ shelf: d.shelf });
+    else if (d.bin) {
+      const i = byBin[d.bin];
+      if (i.count === 0) { toast(`${i.bin} is empty. Check the back store.`); return; }
+      i.count--; K.taken[d.bin] = (K.taken[d.bin] || 0) + 1; renderKiosk();
+      const el = kiosk.querySelector(`[data-bin="${d.bin}"]`); if (el) el.classList.add('flash');
+    }
+    else if (d.back) { const i = byBin[d.back]; i.count++; K.taken[d.back]--; renderKiosk(); }
+    else if ('done' in d) finish();
+    else if ('switch' in d) go({ screen: 'job' });
+  });
+  setInterval(() => { if (K.screen === 'idle') renderKiosk(); }, 30000);
+
+  // ---------- Dashboard ----------
+  let filter = 'all';
+  $('#seg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; filter = b.dataset.f;
+    document.querySelectorAll('#seg button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    renderStock();
+  });
+  $('#q').addEventListener('input', renderStock);
+  $('#po-btn').addEventListener('click', () => {
+    const sup = new Set(items.filter(i => status(i) !== 'ok').map(i => i.supplier));
+    toast(`${sup.size} draft POs would be created in AroFlo for the office to approve.`);
+  });
+
+  function renderDash() {
+    const low = items.filter(i => status(i) !== 'ok');
+    const outN = items.filter(i => status(i) === 'out').length;
+    const real = log.filter(l => !l.flag);
+    const qty = real.reduce((a, l) => a + l.lines.reduce((b, x) => b + x[1], 0), 0);
+    const val = real.reduce((a, l) => a + l.lines.reduce((b, x) => b + byBin[x[0]].cost * x[1], 0), 0);
+    const flags = log.filter(l => l.flag).length;
+    $('#kpis').innerHTML = `
+      <div class="kpi ${low.length ? 'warn' : 'ok'}"><span class="l">Bins below minimum</span><span class="v">${low.length}</span><span class="s">${outN} completely out</span></div>
+      <div class="kpi"><span class="l">Taken today</span><span class="v">${qty}</span><span class="s">${money(val)} ex GST across ${real.length} sign-ins</span></div>
+      <div class="kpi ${flags ? 'crit' : 'ok'}"><span class="l">Unlogged removals</span><span class="v">${flags}</span><span class="s">Weight left a bin, nobody signed in</span></div>
+      <div class="kpi ok"><span class="l">AroFlo sync</span><span class="v">${lastAroflo}</span><span class="s">Jobs in, materials out</span></div>`;
+
+    // reorder: order up to 2× min
+    const groups = {};
+    low.forEach(i => (groups[i.supplier] = groups[i.supplier] || []).push(i));
+    $('#reorder').innerHTML = Object.keys(groups).length ? Object.entries(groups).map(([sup, list]) => {
+      const tot = list.reduce((a, i) => a + (i.min * 2 - i.count) * i.cost, 0);
+      return `<div class="supplier">${esc(sup)} · ${money(tot)}</div><div class="scroll"><table><tbody>${list.map(i => `<tr><td class="mono">${i.bin}</td><td>${esc(i.name)}</td><td class="r"><span class="pill ${status(i)}">${i.count} left</span></td><td class="r num">order ${i.min * 2 - i.count}</td></tr>`).join('')}</tbody></table></div>`;
+    }).join('') : '<p class="example">Nothing below minimum.</p>';
+
+    $('#feed').innerHTML = [...log].reverse().map(l => {
+      const items_ = l.lines.map(([b, q]) => `${q}× ${esc(byBin[b].name)}`).join(', ');
+      if (l.flag) return `<div class="ev flag"><span class="t">${l.t}</span><div><div class="h">Unlogged removal from ${l.lines.map(x => x[0]).join(', ')}</div><div class="d">${items_}. Nobody signed in. Snapshot saved.</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn" type="button" data-toast="Would show the single camera snapshot taken at 07:12.">View snapshot</button><button class="btn" type="button" data-toast="Would let you assign it to a person and job.">Assign to a job</button></div></div></div>`;
+      const s = sById[l.who];
+      return `<div class="ev"><span class="t">${l.t}</span><div><div class="h">${esc(s.name)} <span class="pill info">${l.how}</span>${l.fresh ? ' <span class="pill ok">just now</span>' : ''}</div><div class="d">${esc(jobLabel(l.job))}</div><div class="d">${items_}</div></div></div>`;
+    }).join('');
+
+    renderStock();
+    $('#staff').innerHTML = `<thead><tr><th>Name</th><th>Role</th><th>Face</th><th>Consent form</th><th>Key tag</th><th>PIN</th></tr></thead><tbody>${staff.map(s =>
+      `<tr><td style="display:flex;gap:8px;align-items:center;white-space:nowrap"><span class="ava" style="width:26px;height:26px;font-size:12px;background:${s.col}">${s.first[0]}</span>${esc(s.name)}</td><td>${esc(s.role)}</td>
+       <td>${s.face ? '<span class="yes">Enrolled</span>' : '<span class="no">Not enrolled</span>'}</td>
+       <td>${s.consent ? '<span class="yes">Signed</span>' : '<span class="pill low">Opted out</span>'}</td>
+       <td>${s.tag ? '<span class="yes">Issued</span>' : '<span class="no">None</span>'}</td><td class="mono">••••</td></tr>`).join('')}</tbody>`;
+  }
+  function renderStock() {
+    const q = $('#q').value.trim().toLowerCase();
+    const rows = items.filter(i => (filter === 'all' || status(i) === filter || (filter === 'low' && status(i) === 'out')) && (!q || (i.name + ' ' + i.bin).toLowerCase().includes(q)));
+    $('#stock').innerHTML = `<thead><tr><th>Bin</th><th>Item</th><th class="r">On hand</th><th class="r">Min</th><th>Level</th><th>Status</th><th class="r">Weight</th><th class="r">Unit</th><th>Supplier</th></tr></thead><tbody>${rows.map(i => {
+      const st = status(i), pct = Math.min(100, Math.round(i.count / (i.min * 2) * 100));
+      return `<tr><td class="mono">${i.bin}</td><td>${esc(i.name)}</td><td class="r num">${i.count}</td><td class="r num">${i.min}</td>
+        <td><span class="meter"><i class="${st}" style="width:${pct}%"></i></span></td>
+        <td><span class="pill ${st}">${st === 'ok' ? 'OK' : st === 'low' ? 'Low' : 'Out'}</span></td>
+        <td class="r num">${((i.count * i.g) / 1000).toFixed(2)} kg</td><td class="r num">${i.g} g</td><td>${esc(i.supplier)}</td></tr>`;
+    }).join('') || '<tr><td colspan="9" class="example">No items match.</td></tr>'}</tbody>`;
+  }
+
+  renderKiosk();
+  route();
+})();
+</script>
