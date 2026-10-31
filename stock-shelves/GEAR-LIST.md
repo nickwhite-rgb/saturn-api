@@ -1,59 +1,97 @@
-# Stock Shelves – Gear List
+# Stock Shelves – Gear List (v2, modular)
 
-Prices are rough AUD estimates as of Oct 2026, including shipping. Paste the **search term** into AliExpress or eBay AU, then sort by orders or rating.
-The **Proto** column covers the 10-bin prototype, which runs on a laptop. The **Full** column covers the 50-bin rack. Both include spares.
+**Build:** 50 bins in **5 modules of 10 bins each**, plus one head unit (Pi, touchscreen, camera).
+**Load cells:** 40 × 5 kg and 10 × 10 kg. Each module gets 8 × 5 kg and 2 × 10 kg, so every cabinet has a couple of heavy-duty bins.
+Prices are rough AUD estimates as of Nov 2026, before GST. AliExpress adds 10% GST at checkout.
 
-## A. Scales (AliExpress)
+---
 
-| Item | Search term | Proto | Full | Approx each |
-|---|---|---|---|---|
-| 5 kg load cell + HX711 kit | `5kg load cell HX711 kit aluminum bar` | 12 | 55 | $3–6 |
-| ESP32 dev board, 38-pin, USB-C | `ESP32 DevKitC 38 pin type-c CP2102` | 2 | 7 | $4–7 |
-| ESP32 screw-terminal breakout | `ESP32 38 pin expansion board screw terminal` | 2 | 7 | $3–5 |
-| Calibration weight set | `calibration weight set 1kg 500g 200g` | 1 | 1 | $15–25 |
-| M4/M5 bolt + spacer assortment | `M4 M5 stainless bolt nut assortment` | 1 | 2 | $15 |
-| 4-pin aviation plugs (shelf to controller) | `GX12 4 pin aviation connector` | 12 | 60 | $1 |
+## Why 10 bins per module (the sweet spot)
 
-## B. Rack computer (buy locally from an authorised reseller to avoid fakes)
+| Limit | What it means |
+|---|---|
+| **ESP32 pins** | Each scale needs 1 data pin, and all scales in a module share 1 clock pin. An ESP32 has about 16 safe pins free after the clock and LED pins, so **one controller can handle up to 16 bins**. |
+| **Cost per module** | The fixed cost of controller, power, box and plugs is about $45 per module. That's $4.50 a bin at 10 bins or $2.80 a bin at 16. The difference is small, so let the **cabinet size** decide. |
+| **Wiring** | Keep the HX711 board right next to its load cell and run the 4-wire digital lead (5V, GND, CLK, DATA) back to the controller. Keep runs inside a cabinet, under about 2 m. |
+| **Read speed** | All scales on a controller are read at the same moment on the shared clock, so 10 or 16 bins update just as fast. |
+| **Size and handling** | 10 bins at 100 mm wide is about a 1.2 m cabinet. Two people can lift it, and it fits a standard shelf width. |
+
+**Recommendation:** build **10-bin modules** using a controller that can handle 16. Later you can make a 12-, 14- or 16-bin cabinet with the same box and the same code, with no redesign.
+
+**How modules talk:** WiFi. The Pi runs its own hotspot in the same room, so a tin shed doesn't matter. Each module only needs power. Plug it in and it joins the rack. If WiFi ever proves flaky, swap to a wired ESP32 (WT32-ETH01, about $15) later.
+
+---
+
+## 1. Per-module kit (× 5 modules)
+
+| Item | AliExpress search / listing | Per module | Order (5 modules + spares) | Each | Total |
+|---|---|---|---|---|---|
+| 5 kg load cell + HX711 | Makeit "5kg and HX711" | 8 | **40 + 4 spare = 44** | $4.89 | $215 |
+| 10 kg load cell + HX711 | Makeit "10kg and HX711" (price to confirm) | 2 | **10 + 1 spare = 11** | ~$6 | $66 |
+| ESP32 DevKitC 38-pin, USB-C | `ESP32 DevKitC 38 pin type-c CP2102` | 1 | **6** | ~$5 | $30 |
+| ESP32 screw-terminal breakout | `ESP32 38 pin expansion board screw terminal` | 1 | **6** | ~$4 | $24 |
+| 4-pin aviation plug + socket pair | `GX12 4 pin aviation connector` | 10 | **55** | ~$1 | $55 |
+| Small ABS project box | `ABS project box 100x60x25` | 1 | **6** | ~$3 | $18 |
+| Nylon standoff / spacer kit (lets the load cell flex) | `M4 nylon standoff spacer kit` | — | **2** | ~$10 | $20 |
+| M4/M5 stainless bolt assortment | `M4 M5 stainless bolt nut assortment` | — | **2** | ~$15 | $30 |
+| 5 V 2 A USB-C plug pack | local or AliExpress | 1 | **5** | ~$12 | $60 |
+| **Scale side subtotal** | | | | | **≈ $520** |
+
+**Per module:** about **$100 in electronics**. Each extra 10-bin module after the first five costs about $100, plus its bins and cabinet.
+
+## 2. Head unit (× 1, the touchscreen module)
 
 | Item | Where | Qty | Approx |
 |---|---|---|---|
-| Raspberry Pi 5 8 GB + active cooler + case | Core Electronics / Pakronics / Little Bird | 1 | $190–230 |
-| Official 27 W USB-C power supply | same | 1 | $20 |
-| 64 GB high-endurance microSD | same or JB Hi-Fi | 1 | $20 |
-| 10.1" 1280×800 capacitive HDMI touchscreen | AliExpress: `10.1 inch 1280x800 HDMI capacitive touch raspberry pi` | 1 | $100–150 |
-| Camera Module 3 **Wide** + Pi 5 camera cable | Pakronics / Little Bird | 1 | $65–75 |
-| USB NFC reader | AliExpress/eBay: `ACR122U NFC reader USB` | 1 | $35–50 |
-| NFC key fobs | `13.56MHz Mifare key fob` (20 pk) | 1 | $8 |
+| Raspberry Pi 5 8 GB + active cooler + case | Core Electronics / Pakronics / Little Bird (not AliExpress, which has clones) | 1 | $200 |
+| Official Pi 5 27 W power supply | same | 1 | $20 |
+| 64 GB high-endurance microSD | same / JB Hi-Fi | 1 | $20 |
+| 10.1" 1280×800 capacitive HDMI touchscreen | AliExpress: `10.1 inch 1280x800 HDMI capacitive touch raspberry pi` | 1 | $110–150 |
+| Camera Module 3 **Wide** + Pi 5 camera cable | Pakronics / Little Bird | 1 | $70 |
+| USB NFC reader | `ACR122U NFC reader USB` | 1 | $40 |
+| NFC key fobs, 20 pack | `13.56MHz Mifare key fob` | 1 | $8 |
+| **Head unit subtotal** | | | **≈ $480** |
 
-*Proto doesn't need section B. Use a laptop.*
+## 3. Bench and setup gear
 
-## C. From the wholesaler / van
+| Item | Search | Qty | Approx |
+|---|---|---|---|
+| Calibration weights (1 kg, 500 g, 200 g, 100 g) | `calibration weight set 1kg` | 1 | $20 |
+| Dupont crimp kit + header pins | `dupont crimp tool kit` | 1 | $25 |
+| Soldering consumables (if not already owned) | — | — | $20 |
 
-- 4-core shielded alarm cable for each shelf run (you'll already have it)
-- 5 V DIN-rail PSU, e.g. Mean Well HDR-30-5, for the ESP32s
-- Small DIN enclosure, glands, ferrules, cable ties
+## 4. From the wholesaler / van
 
-## D. Bins and platforms (local is better since bulky freight from overseas is expensive)
+- 4-core shielded alarm cable, about 15 m per module
+- Cable glands, heatshrink, ties
+- A GPO or power strip per cabinet for the plug packs, or one 5 V DIN supply feeding several modules
 
-- **Bins:** try eBay AU `plastic picking bin 400mm`, Bunnings, or a storage supplier. Check the internal width, since GPOs need about 120 mm or more.
-- **Scale platforms:** 3 mm aluminium or 6 mm acrylic, cut 100 × 400. A local sign shop or laser cutter is cheapest.
+## 5. Buy locally (bulky)
 
-## E. Optional
-
-- LED strip so a bin lights up when someone searches for it: `WS2812B 5V 60 LED/m IP30`, 6 m, about $30
-
-## Rough totals
-
-| | Proto | Full rack |
+| Item | Qty | Approx |
 |---|---|---|
-| Electronics | ~$150 | ~$1,050 |
-| Bins + platforms | ~$80 | ~$400 |
-| **Total** | **~$230** | **~$1,450** (plus shelving if needed) |
+| Bins, 100 × 100 × 400 (or 150 wide for GPOs and switches) | 50 | $5–8 ea → ~$350 |
+| Top platforms: 3 mm aluminium or 6 mm acrylic, 100 × 400, cut by a sign shop | 50 | ~$150 |
+| Cabinet carcass per module (ply or steel shelving) | 5 | your call |
 
-## Buying tips
+## 6. Optional
 
-- Buy about 10% spare load cells and HX711s, because a few cheap ones will be duds.
-- Choose kits that ship with the aluminium bar and mounting screws.
-- Order the AliExpress gear first, since it takes 2–4 weeks to reach Warwick.
-- Don't buy the Pi or the camera from AliExpress, where clones are common.
+- Light-up bins: `WS2812B 5V 60 LED/m IP30`, about 1.2 m per module, about $30 for the lot
+
+---
+
+## Totals (rough, inc GST)
+
+| | Cost |
+|---|---|
+| Scale side, 5 modules (AliExpress) | ~$570 |
+| Head unit | ~$480 |
+| Bench gear | ~$65 |
+| Bins + platforms | ~$500 |
+| **Total** | **≈ $1,600** + cabinets |
+
+## Buying order
+
+1. **Now:** prototype quantity from section 1 (8 × 5 kg, 2 × 10 kg, 2 × ESP32, 2 × breakout, plugs, bolts) plus calibration weights. That's about $120.
+2. **Once one module works for a month:** the rest of section 1 and the head unit.
+3. **Last:** bins, platforms and cabinets, once you've confirmed bin sizes against real stock.
