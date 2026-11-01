@@ -263,6 +263,33 @@ td.r, th.r { text-align: right; }
 .stage .w { font-family: var(--f-display); font-size: 18px; color: var(--accent); }
 .stage p { color: var(--muted); font-size: 14px; }
 tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
+/* ---------- Bin screens ---------- */
+.lab-hero { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; margin-bottom: 20px; }
+@media (max-width: 960px) { .lab-hero { grid-template-columns: minmax(0, 1fr); } }
+.stage-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.strip { background: #11161a; border-radius: 8px; padding: 10px 12px 12px; box-shadow: 0 10px 24px -14px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 255 255 / .06); max-width: 100%; }
+.strip .lip { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 11px; color: #6f7c87; margin-bottom: 6px; gap: 8px; }
+canvas.lcd { display: block; width: 100%; height: auto; aspect-ratio: 284 / 76; image-rendering: pixelated; border-radius: 2px; background: #06090c; }
+.dims { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.dims b { color: var(--ink); font-family: var(--f-mono); font-weight: 500; }
+.ctrl-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.ctrl-row label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.ctrl-row select { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 7px 10px; font: inherit; font-size: 14px; max-width: 100%; }
+.real { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.real canvas.lcd { width: 55.3mm; max-width: 100%; }
+.cab { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; padding: 16px; background: var(--sunk); border-radius: 10px; border: 1px solid var(--line); }
+@media (max-width: 760px) { .cab { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bay { background: transparent; border: 0; padding: 0; display: flex; flex-direction: column; gap: 0; text-align: left; min-width: 0; }
+.bfront { position: relative; height: 70px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #4f6f8f, #3d5a77); border: 1px solid #2f4a63; border-bottom: 0; overflow: hidden; }
+.bfront .fill { position: absolute; left: 6px; right: 6px; bottom: 0; background: rgb(255 255 255 / .16); border-radius: 3px 3px 0 0; transition: height .3s; }
+.bfront .tag { position: absolute; top: 6px; left: 8px; font-family: var(--f-mono); font-size: 11px; color: #dbe6f0; }
+.bay .lcdwrap { background: #11161a; padding: 6px 7px 7px; border-radius: 0 0 6px 6px; }
+.bay:hover .bfront { filter: brightness(1.1); }
+.bay:active .bfront { transform: translateY(-2px); }
+.find-msg { font-size: 13px; color: var(--muted); padding: 10px 16px 0; min-height: 30px; }
+.legend { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; font-size: 14px; color: var(--muted); align-items: start; }
+.legend i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; margin-top: 3px; }
+.legend b { color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
 </style>
 
@@ -272,6 +299,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
     <div class="brand"><b>Stock Shelves</b><span>Saturn Electrical · concept mockup</span></div>
     <nav class="tabs" aria-label="Views">
       <a href="#shelf" data-view="shelf">Shelf screen</a>
+      <a href="#labels" data-view="labels">Bin screens</a>
       <a href="#dashboard" data-view="dashboard">Office dashboard</a>
       <a href="#brief" data-view="brief">Project brief</a>
     </nav>
@@ -309,6 +337,64 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
           <p>Take enough Double GPOs (A1) to drop below the minimum, then check the Office dashboard. It'll be on the reorder list. Or tap "Someone we don't know" to see the PIN fallback.</p>
         </div>
       </aside>
+    </div>
+  </section>
+
+  <!-- ===================== BIN SCREENS ===================== -->
+  <section id="v-labels" hidden>
+    <div class="view-head">
+      <span class="eyebrow">2.25" strip screen under every bin · 284 × 76 px</span>
+      <h1>Bin screens</h1>
+      <p>A 62 × 18 mm colour screen on the front lip of each bin. It shows the part number, a QR code and the live count. Try the states below, or tap bins in the cabinet to lift stock out.</p>
+    </div>
+
+    <div class="lab-hero">
+      <div class="stage-card">
+        <div class="strip">
+          <div class="lip"><span>Bin front lip</span><span>shown 3× size</span></div>
+          <canvas class="lcd" id="lcd-big" width="284" height="76"></canvas>
+        </div>
+        <div class="ctrl-row">
+          <label for="lab-bin">Bin</label>
+          <select id="lab-bin"></select>
+          <div class="seg" id="lab-state">
+            <button type="button" data-st="live" aria-pressed="true">Live</button>
+            <button type="button" data-st="pick" aria-pressed="false">Just picked</button>
+            <button type="button" data-st="find" aria-pressed="false">Find it</button>
+            <button type="button" data-st="sleep" aria-pressed="false">Sleeping</button>
+            <button type="button" data-st="fault" aria-pressed="false">Scale check</button>
+          </div>
+        </div>
+        <div class="real"><span>Real size on your screen:</span><div class="strip" style="padding:5px 6px"><canvas class="lcd" id="lcd-real" width="284" height="76"></canvas></div></div>
+        <div class="dims"><span>Screen <b>62.5 × 17.9 mm</b></span><span>Visible <b>55.3 × 14.8 mm</b></span><span>Pixels <b>284 × 76</b></span><span>Cost <b>~$5</b></span></div>
+      </div>
+      <aside class="note-card">
+        <h3>What each part means</h3>
+        <div class="legend" style="margin-top:8px">
+          <i style="background:#f2f5f7"></i><span><b>Part number</b> (Saturn SKU, matched to AroFlo), then the item name and bin/min level.</span>
+          <i style="background:#ffffff;outline:1px solid var(--line)"></i><span><b>QR code</b> of the part number. Scan with a phone to reorder or look it up. Print a paper barcode too if you use a laser gun.</span>
+          <i style="background:#3ccf7e"></i><span><b>Count green</b>: above minimum.</span>
+          <i style="background:#f5a524"></i><span><b>Amber</b>: below minimum and already on the reorder list.</span>
+          <i style="background:#ff5a5a"></i><span><b>Red</b>: empty.</span>
+          <i style="background:#3a8fdc"></i><span><b>Blue flash</b>: just picked. Shows how many and who, so they know it registered.</span>
+          <i style="background:#ffd21f"></i><span><b>Yellow</b>: "find it". Search on the big screen and the right bins light up.</span>
+        </div>
+        <p style="margin-top:12px">Screens dim when nobody is at the rack and wake when the camera sees someone.</p>
+      </aside>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><h2 id="cab-title">Module A</h2>
+        <div class="sp filters">
+          <input id="find" type="search" placeholder="Find a part, e.g. RCBO" aria-label="Find a part">
+          <div class="seg" id="cab-seg">
+            <button type="button" data-sh="A" aria-pressed="true">A</button><button type="button" data-sh="B" aria-pressed="false">B</button><button type="button" data-sh="C" aria-pressed="false">C</button><button type="button" data-sh="D" aria-pressed="false">D</button><button type="button" data-sh="E" aria-pressed="false">E</button>
+          </div>
+          <button class="btn" type="button" id="sleep-btn" aria-pressed="false">Nobody at the rack</button>
+        </div>
+      </div>
+      <div class="find-msg" id="find-msg">Tap a bin to lift one out. Type in Find and the right screens light up.</div>
+      <div class="panel-b"><div class="cab" id="cab"></div></div>
     </div>
   </section>
 
@@ -485,6 +571,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
   </section>
 </main>
 <div class="toast" id="toast" hidden></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 
 <script>
 (() => {
@@ -506,6 +593,13 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
   const items = [];
   for (const s of Object.keys(RAW)) RAW[s].forEach((r, i) => items.push({ bin: s + (i + 1), shelf: s, name: r[0], g: r[1], cost: r[2], count: r[3], min: r[4], supplier: r[5] }));
   const byBin = Object.fromEntries(items.map(i => [i.bin, i]));
+  const SKUS = ['GPO2-10A-WH','GPO1-10A-WH','GPO2-USB-AC','GPO2-WP-IP53','GPO1-15A-WH','GPO2-10A-BK','SW1-WH','SW2-WH','SW3-WH','PLATE-BLANK',
+    'DIM-ROT-350','FAN-CTRL','DIM-PB-LED','SW-ARCH','SW-WP','OUT-TV','OUT-CAT6','BRKT-MNT','BOX-FLUSH','BLK-SURF',
+    'MCB-1P-16','MCB-1P-20','MCB-1P-32','RCBO-1P-16','RCBO-1P-20','RCBO-1P-32','MSW-2P-63','SURGE-DIV','BUS-LINK','DIN-BLANK10',
+    'DL-10W-TC','DL-13W','SA-240-IC','SA-LITH-10Y','BATTEN','PLUG-BASE','PIR-360','LAMP-GU10','LAMP-B22-9W','DRV-DL',
+    'WAGO-221-413','WAGO-221-415','GLAND-20-10','SADDLE-20-50','COUP-20-10','JB-4T','TIE-300-100','TAPE-INS','CLAMP-EARTH','HSHRINK-PK'];
+  items.forEach((it, i) => { it.sku = SKUS[i]; });
+  const binState = {}; // bin -> { s: 'pick' | 'find', until, n, who }
 
   const staff = [
     { id: 'jake', name: 'Jake Morrison', first: 'Jake', role: 'Electrician', col: '#2f86d6', face: true, consent: true, tag: true, pin: '1234' },
@@ -544,13 +638,14 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
   document.addEventListener('click', e => { const b = e.target.closest('[data-toast]'); if (b) toast(b.dataset.toast); });
 
   // ---------- Views ----------
-  const VIEWS = ['shelf', 'dashboard', 'brief'];
+  const VIEWS = ['shelf', 'labels', 'dashboard', 'brief'];
   function route() {
     const h = location.hash.slice(1);
     let v = VIEWS.includes(h) ? h : (h.startsWith('b-') ? 'brief' : 'shelf');
     VIEWS.forEach(x => { $('#v-' + x).hidden = x !== v; });
     document.querySelectorAll('.tabs a').forEach(a => a.setAttribute('aria-current', a.dataset.view === v ? 'page' : 'false'));
     if (v === 'dashboard') renderDash();
+    if (v === 'labels') { buildCab(); renderLabels(); }
     if (v === 'shelf') fit();
     if (h.startsWith('b-')) { const el = document.getElementById(h); if (el) el.scrollIntoView(); } else window.scrollTo(0, 0);
   }
@@ -716,6 +811,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
       const i = byBin[d.bin];
       if (i.count === 0) { toast(`${i.bin} is empty. Check the back store.`); return; }
       i.count--; K.taken[d.bin] = (K.taken[d.bin] || 0) + 1; renderKiosk();
+      binState[d.bin] = { s: 'pick', until: Date.now() + 3000, n: K.taken[d.bin], who: K.user ? K.user.first : '' };
       const el = kiosk.querySelector(`[data-bin="${d.bin}"]`); if (el) el.classList.add('flash');
     }
     else if (d.back) { const i = byBin[d.back]; i.count++; K.taken[d.back]--; renderKiosk(); }
@@ -783,6 +879,124 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--line); }
         <td class="r num">${((i.count * i.g) / 1000).toFixed(2)} kg</td><td class="r num">${i.g} g</td><td>${esc(i.supplier)}</td></tr>`;
     }).join('') || '<tr><td colspan="9" class="example">No items match.</td></tr>'}</tbody>`;
   }
+
+  // ---------- Bin screens ----------
+  const LC = { bg: '#06090c', ink: '#f2f5f7', sub: '#c9d3db', dim: '#7f8e9b', ok: '#3ccf7e', warn: '#f5a524', crit: '#ff5a5a', acc: '#3a8fdc', find: '#ffd21f' };
+  const qrCache = {};
+  function qrMatrix(text) {
+    try {
+      if (window.qrcode) { const q = window.qrcode(0, 'M'); q.addData(text); q.make(); const n = q.getModuleCount(); return { n, dark: (r, c) => q.isDark(r, c) }; }
+    } catch (e) { /* fall through to placeholder */ }
+    // Placeholder pattern if the QR library can't load (looks like a QR, not scannable)
+    const n = 21; let h = 0; for (const ch of text) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const finder = (r, c) => { for (const [R, C2] of [[0, 0], [0, 14], [14, 0]]) { const rr = r - R, cc = c - C2; if (rr >= 0 && rr < 7 && cc >= 0 && cc < 7) return rr === 0 || rr === 6 || cc === 0 || cc === 6 || (rr >= 2 && rr <= 4 && cc >= 2 && cc <= 4); } return null; };
+    return { n, dark: (r, c) => { const f = finder(r, c); if (f !== null) return f; if ((r < 8 && c < 8) || (r < 8 && c > 12) || (r > 12 && c < 8)) return false; const v = Math.sin(h % 1000 + r * 12.9898 + c * 78.233) * 43758.5453; return v - Math.floor(v) > 0.5; } };
+  }
+  function fitText(x, t, X, Y, maxW) {
+    if (x.measureText(t).width <= maxW) return x.fillText(t, X, Y);
+    while (t.length > 1 && x.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+    x.fillText(t + '…', X, Y);
+  }
+  function drawLabel(cv, it, mode, extra = {}) {
+    const x = cv.getContext('2d'), W = 284, H = 76;
+    const st = status(it), qc = st === 'out' ? LC.crit : st === 'low' ? LC.warn : LC.ok;
+    const find = mode === 'find';
+    const ink = find ? '#111' : LC.ink, dim = find ? '#4a4420' : LC.dim;
+    x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+    x.fillStyle = find ? LC.find : LC.bg; x.fillRect(0, 0, W, H);
+    // left: bin, part number, name, status
+    x.fillStyle = dim; x.font = '500 10px "IBM Plex Mono", monospace'; x.fillText(`${it.bin} · MIN ${it.min}`, 8, 15);
+    x.fillStyle = ink; x.font = '700 20px "Barlow Condensed", "Arial Narrow", sans-serif'; fitText(x, it.sku, 8, 37, 146);
+    x.fillStyle = find ? '#222' : LC.sub; x.font = '500 12px "Barlow", Arial, sans-serif'; fitText(x, it.name, 8, 52, 146);
+    let msg, mc;
+    if (find) { msg = '▼ THIS BIN'; mc = '#111'; }
+    else if (mode === 'fault') { msg = 'SCALE CHECK · TELL OFFICE'; mc = LC.warn; }
+    else if (st === 'out') { msg = 'OUT · ON REORDER LIST'; mc = LC.crit; }
+    else if (st === 'low') { msg = 'LOW · ON REORDER LIST'; mc = LC.warn; }
+    else { msg = 'IN STOCK'; mc = LC.ok; }
+    x.fillStyle = mc; x.font = '700 10px "IBM Plex Mono", monospace'; fitText(x, msg, 8, 68, 146);
+    // middle: QR of the part number
+    const q = qrCache[it.sku] || (qrCache[it.sku] = qrMatrix(it.sku));
+    const px = Math.max(1, Math.floor(60 / (q.n + 2))), size = (q.n + 2) * px;
+    const qx = 158 + Math.floor((60 - size) / 2), qy = Math.floor((H - size) / 2);
+    x.fillStyle = '#fff'; x.fillRect(qx, qy, size, size); x.fillStyle = '#000';
+    for (let r = 0; r < q.n; r++) for (let c = 0; c < q.n; c++) if (q.dark(r, c)) x.fillRect(qx + (c + 1) * px, qy + (r + 1) * px, px, px);
+    // right: count
+    x.fillStyle = find ? 'rgba(0,0,0,.25)' : '#1f2a33'; x.fillRect(222, 8, 1, H - 16);
+    x.textAlign = 'center';
+    if (mode === 'pick') {
+      x.fillStyle = LC.acc; x.fillRect(223, 0, 61, H);
+      x.fillStyle = '#fff'; x.font = '700 32px "Barlow Condensed", "Arial Narrow", sans-serif'; x.fillText('−' + (extra.n || 1), 253, 38);
+      x.font = '700 10px "IBM Plex Mono", monospace'; x.fillText((extra.who || 'TAKEN').toUpperCase().slice(0, 8), 253, 53);
+      x.font = '500 10px "IBM Plex Mono", monospace'; x.fillText(`${it.count} LEFT`, 253, 67);
+    } else if (mode === 'fault') {
+      x.fillStyle = LC.warn; x.font = '700 38px "Barlow Condensed", "Arial Narrow", sans-serif'; x.fillText('?', 253, 48);
+      x.font = '500 9px "IBM Plex Mono", monospace'; x.fillText('UNSTABLE', 253, 65);
+    } else {
+      x.fillStyle = find ? '#111' : qc; x.font = '700 42px "Barlow Condensed", "Arial Narrow", sans-serif'; x.fillText(String(it.count), 253, 50);
+      x.fillStyle = dim; x.font = '500 9px "IBM Plex Mono", monospace'; x.fillText('IN BIN', 253, 66);
+    }
+    x.textAlign = 'left';
+    if (mode === 'sleep') { x.fillStyle = 'rgba(0,0,0,.84)'; x.fillRect(0, 0, W, H); }
+  }
+
+  let heroState = 'live', cabShelf = 'A', rackSleep = false;
+  const labBin = $('#lab-bin');
+  labBin.innerHTML = items.map(i => `<option value="${i.bin}">${i.bin} · ${esc(i.sku)}${status(i) !== 'ok' ? ' (' + status(i) + ')' : ''}</option>`).join('');
+  labBin.addEventListener('change', renderLabels);
+  $('#lab-state').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; heroState = b.dataset.st;
+    document.querySelectorAll('#lab-state button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    renderLabels();
+  });
+  function modeFor(bin) {
+    const s = binState[bin];
+    if (s && s.until > Date.now()) return s.s;
+    return rackSleep ? 'sleep' : 'live';
+  }
+  function buildCab() {
+    $('#cab-title').textContent = `Module ${cabShelf} · ${SHELVES[cabShelf]}`;
+    document.querySelectorAll('#cab-seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.sh === cabShelf));
+    $('#cab').innerHTML = items.filter(i => i.shelf === cabShelf).map(i =>
+      `<button class="bay" type="button" data-bay="${i.bin}" aria-label="Take one ${esc(i.name)}"><span class="bfront"><span class="tag">${i.bin}</span><span class="fill"></span></span><span class="lcdwrap"><canvas class="lcd" width="284" height="76"></canvas></span></button>`).join('');
+  }
+  function renderLabels() {
+    const it = byBin[labBin.value] || items[0];
+    const m = heroState === 'live' ? 'live' : heroState;
+    const ex = { n: 2, who: 'Jake' };
+    drawLabel($('#lcd-big'), it, m, ex); drawLabel($('#lcd-real'), it, m, ex);
+    document.querySelectorAll('#cab .bay').forEach(b => {
+      const i = byBin[b.dataset.bay], s = binState[i.bin];
+      drawLabel(b.querySelector('canvas'), i, modeFor(i.bin), s || {});
+      b.querySelector('.fill').style.height = Math.min(100, Math.round(i.count / (i.min * 2) * 100)) + '%';
+    });
+  }
+  $('#cab-seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cabShelf = b.dataset.sh; buildCab(); renderLabels(); });
+  $('#cab').addEventListener('click', e => {
+    const b = e.target.closest('.bay'); if (!b) return; const i = byBin[b.dataset.bay];
+    if (i.count === 0) { toast(`${i.bin} is empty. The screen is already showing red.`); return; }
+    i.count--;
+    const prev = binState[i.bin];
+    binState[i.bin] = { s: 'pick', until: Date.now() + 3000, n: prev && prev.s === 'pick' && prev.until > Date.now() ? prev.n + 1 : 1, who: 'Demo' };
+    renderLabels();
+  });
+  $('#find').addEventListener('input', e => {
+    const q = e.target.value.trim().toLowerCase();
+    Object.keys(binState).forEach(k => { if (binState[k].s === 'find') delete binState[k]; });
+    if (q.length < 2) { $('#find-msg').textContent = 'Tap a bin to lift one out. Type in Find and the right screens light up.'; renderLabels(); return; }
+    const hits = items.filter(i => (i.sku + ' ' + i.name).toLowerCase().includes(q));
+    hits.forEach(i => { binState[i.bin] = { s: 'find', until: Date.now() + 15000 }; });
+    if (hits.length && !hits.some(i => i.shelf === cabShelf)) { cabShelf = hits[0].shelf; buildCab(); }
+    $('#find-msg').textContent = hits.length ? `${hits.length} bin${hits.length > 1 ? 's' : ''} lit up for 15 s: ${hits.map(i => i.bin).join(', ')}` : 'No part matches that.';
+    renderLabels();
+  });
+  $('#sleep-btn').addEventListener('click', e => {
+    rackSleep = !rackSleep; e.currentTarget.setAttribute('aria-pressed', rackSleep);
+    e.currentTarget.textContent = rackSleep ? 'Someone walks up' : 'Nobody at the rack';
+    renderLabels();
+  });
+  setInterval(() => { if (!$('#v-labels').hidden) renderLabels(); }, 500);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!$('#v-labels').hidden) renderLabels(); });
 
   renderKiosk();
   route();
