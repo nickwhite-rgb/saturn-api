@@ -1,0 +1,252 @@
+<title>Stock Shelves Test Rig</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a single drawing sheet. Shopping list, wiring diagram, pin schedule,
+   mounting detail and gotchas, closed by an electrical-style title block. */
+:root {
+  --bg: #eef2f5;
+  --sheet: #ffffff;
+  --ink: #18232d;
+  --muted: #5b6875;
+  --line: #d3dbe2;
+  --accent: #185FA5;
+  --panel: #f3f6f8;
+  --wood: #d9b98a;
+  --alu: #c9d1d8;
+  --warn: #a8620a;
+  --w-red: #d93b3b; --w-white: #8f9dab; --w-green: #2e9d5b;
+  --w-dt: #138a9e; --w-sck: #8a5cd6; --w-scl: #2f78c4; --w-sda: #d9822b;
+  --w-dc: #c2569b; --w-res: #6b7c8c; --w-cs: #b8901a;
+  --f-head: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1318; --sheet: #141c23; --ink: #e3eaf0; --muted: #95a3b0; --line: #2a3640; --accent: #5aa2e6;
+    --panel: #1a242d; --wood: #8a6b42; --alu: #6f7c87; --warn: #f0a540;
+    --w-red: #ff6464; --w-white: #c3ccd4; --w-green: #4cc47e; --w-dt: #3cb5c9; --w-sck: #a582ea;
+    --w-scl: #5aa2e6; --w-sda: #f0a050; --w-dc: #e07ab8; --w-res: #95a3b1; --w-cs: #d9b23a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1318; --sheet: #141c23; --ink: #e3eaf0; --muted: #95a3b0; --line: #2a3640; --accent: #5aa2e6;
+  --panel: #1a242d; --wood: #8a6b42; --alu: #6f7c87; --warn: #f0a540;
+  --w-red: #ff6464; --w-white: #c3ccd4; --w-green: #4cc47e; --w-dt: #3cb5c9; --w-sck: #a582ea;
+  --w-scl: #5aa2e6; --w-sda: #f0a050; --w-dc: #e07ab8; --w-res: #95a3b1; --w-cs: #d9b23a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.sheet { background: var(--sheet); border: 1px solid var(--line); border-radius: 4px; padding: clamp(18px, 4vw, 40px); display: flex; flex-direction: column; gap: 40px; }
+h1, h2 { font-family: var(--f-head); margin: 0; line-height: 1.1; text-wrap: balance; }
+h1 { font-size: clamp(30px, 5vw, 42px); }
+h2 { font-size: 24px; display: flex; gap: 12px; align-items: baseline; }
+h2 .ref { font-family: var(--f-mono); font-size: 13px; color: var(--accent); font-weight: 500; }
+p { margin: 0; max-width: 70ch; }
+.muted { color: var(--muted); }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.head { display: flex; flex-direction: column; gap: 8px; }
+section { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-family: var(--f-mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 10px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.r, th.r { text-align: right; }
+td code, .mono { font-family: var(--f-mono); font-size: 13px; }
+tfoot td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: 0; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.have { color: var(--muted); }
+.diagram { border: 1px solid var(--line); border-radius: 4px; background: var(--panel); padding: 12px; }
+.diagram svg { display: block; width: 100%; min-width: 860px; height: auto; }
+.mount svg { min-width: 560px; }
+svg text { font-family: var(--f-mono); fill: var(--ink); }
+svg .lbl { font-size: 12px; }
+svg .sm { font-size: 11px; fill: var(--muted); }
+svg .ttl { font-family: var(--f-head); font-size: 18px; font-weight: 700; }
+svg .box { fill: var(--sheet); stroke: var(--ink); stroke-width: 1.5; }
+svg .pin { fill: var(--ink); }
+svg .w { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+svg .dash { stroke-dasharray: 6 5; }
+.sw { display: inline-block; width: 22px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 8px; }
+.notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 720px) { .notes { grid-template-columns: minmax(0, 1fr); } }
+.note { border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.note b { font-family: var(--f-head); font-size: 17px; }
+.note.warn { border-color: color-mix(in srgb, var(--warn) 50%, var(--line)); background: color-mix(in srgb, var(--warn) 7%, var(--sheet)); }
+.titleblock { display: grid; grid-template-columns: 2fr repeat(4, minmax(0, 1fr)); border: 2px solid var(--ink); font-size: 13px; }
+@media (max-width: 720px) { .titleblock { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.titleblock div { padding: 8px 12px; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.titleblock span { font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.titleblock strong { font-family: var(--f-head); font-size: 16px; }
+</style>
+
+<div class="wrap">
+<article class="sheet">
+
+  <header class="head">
+    <span class="eyebrow">Stock Shelves · bench test rig</span>
+    <h1>3-bin test rig: wiring and parts</h1>
+    <p class="muted">One ESP32, three scales and three bin screens on the bench. It proves the counting and the screens before you build a full 10-bin module. Pin numbers suit a standard ESP32 DevKit (30 or 38 pin).</p>
+  </header>
+
+  <section>
+    <h2><span class="ref">01</span>What to order</h2>
+    <p class="muted">You've already got the ESP32. Prices are rough AUD before GST. AliExpress unless noted.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Item</th><th>Search / where</th><th class="r">Qty</th><th class="r">~Each</th><th class="r">~Total</th></tr></thead>
+        <tbody>
+          <tr><td>5 kg load cell + HX711</td><td>Makeit "5kg and HX711" (1 spare)</td><td class="r num">3</td><td class="r num">$5.30</td><td class="r num">$16</td></tr>
+          <tr><td>10 kg load cell + HX711</td><td>Makeit "10kg and HX711"</td><td class="r num">1</td><td class="r num">$6</td><td class="r num">$6</td></tr>
+          <tr><td>2.25" TFT 76×284, 8-pin, <b>with pin header</b></td><td><code>2.25 inch TFT 76x284 ST7789 8P</code></td><td class="r num">3</td><td class="r num">$6</td><td class="r num">$18</td></tr>
+          <tr><td>ESP32 screw-terminal breakout (match 30 or 38 pin)</td><td><code>ESP32 expansion board screw terminal</code></td><td class="r num">1</td><td class="r num">$4</td><td class="r num">$4</td></tr>
+          <tr><td>Breadboard 830 + jumper kit</td><td><code>830 breadboard jumper wire kit</code></td><td class="r num">1</td><td class="r num">$6</td><td class="r num">$6</td></tr>
+          <tr><td>Dupont leads 20 cm, female–female and male–female</td><td><code>dupont jumper wire 20cm 40pcs</code></td><td class="r num">2</td><td class="r num">$3</td><td class="r num">$6</td></tr>
+          <tr><td>Calibration weights (100 g – 1 kg)</td><td><code>calibration weight set 1kg</code></td><td class="r num">1</td><td class="r num">$15</td><td class="r num">$15</td></tr>
+          <tr><td>M4 + M5 bolts, nuts, washers</td><td>Bunnings</td><td class="r num">—</td><td class="r num"></td><td class="r num">$10</td></tr>
+          <tr class="have"><td>Ply/MDF offcuts, 3 small tubs, USB cable, soldering iron</td><td>The shed</td><td class="r num">—</td><td class="r num"></td><td class="r num">$0</td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="4">Test rig total</td><td class="r num">≈ $80</td></tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="ref">02</span>Wiring: bin 1 shown</h2>
+    <p class="muted">Bins 2 and 3 wire exactly the same. They share power, ground and the clock lines. Only the yellow-dashed lines are different for each one. <b>Run everything off 3V3, not 5V.</b></p>
+    <div class="diagram scroll">
+      <svg viewBox="0 0 1000 480" role="img" aria-label="Wiring diagram: load cell to HX711 to ESP32 to 2.25 inch TFT screen">
+        <!-- load cell -->
+        <text class="sm" x="30" y="290">wires on the cell:</text>
+        <text class="sm" x="30" y="306">red E+ · black E−</text>
+        <text class="sm" x="30" y="322">white A− · green A+</text>
+        <rect x="30" y="200" width="150" height="34" rx="3" style="fill:var(--alu);stroke:var(--ink);stroke-width:1.5"/>
+        <rect x="88" y="206" width="34" height="22" rx="2" style="fill:var(--sheet);stroke:var(--ink)"/>
+        <circle cx="46" cy="217" r="4" style="fill:var(--sheet);stroke:var(--ink)"/><circle cx="62" cy="217" r="4" style="fill:var(--sheet);stroke:var(--ink)"/>
+        <text class="lbl" x="105" y="258" text-anchor="middle">LOAD CELL 5 kg</text>
+        <path class="w" style="stroke:var(--w-red)" d="M180 208 H195 V150 H240"/>
+        <path class="w" style="stroke:var(--ink)" d="M180 214 H205 V175 H240"/>
+        <path class="w" style="stroke:var(--w-white)" d="M180 220 H215 V200 H240"/>
+        <path class="w" style="stroke:var(--w-green)" d="M180 226 H240"/>
+        <!-- HX711 -->
+        <rect class="box" x="240" y="120" width="150" height="180" rx="4"/>
+        <text class="ttl" x="315" y="290" text-anchor="middle">HX711</text>
+        <text class="lbl" x="250" y="154">E+</text><text class="lbl" x="250" y="179">E−</text><text class="lbl" x="250" y="204">A−</text><text class="lbl" x="250" y="230">A+</text>
+        <text class="lbl" x="382" y="154" text-anchor="end">VCC</text><text class="lbl" x="382" y="184" text-anchor="end">GND</text><text class="lbl" x="382" y="234" text-anchor="end">DT</text><text class="lbl" x="382" y="274" text-anchor="end">SCK</text>
+        <!-- HX711 to ESP32 -->
+        <path class="w" style="stroke:var(--w-red)" d="M390 150 H470"/>
+        <path class="w" style="stroke:var(--ink)" d="M390 180 H470"/>
+        <path class="w" style="stroke:var(--w-dt)" d="M390 230 H470"/>
+        <path class="w" style="stroke:var(--w-sck)" d="M390 270 H470"/>
+        <path class="w dash" style="stroke:var(--w-cs)" d="M470 320 H420"/><text class="sm" x="414" y="324" text-anchor="end">bin 2 DT</text>
+        <path class="w dash" style="stroke:var(--w-cs)" d="M470 360 H420"/><text class="sm" x="414" y="364" text-anchor="end">bin 3 DT</text>
+        <!-- ESP32 -->
+        <rect class="box" x="470" y="70" width="170" height="380" rx="6"/>
+        <rect x="535" y="450" width="40" height="14" rx="2" style="fill:var(--alu);stroke:var(--ink)"/>
+        <text class="ttl" x="480" y="100">ESP32</text>
+        <text class="lbl" x="480" y="154">3V3</text><text class="lbl" x="480" y="184">GND</text><text class="lbl" x="480" y="234">GPIO34</text><text class="lbl" x="480" y="274">GPIO25</text><text class="lbl" x="480" y="324">GPIO35</text><text class="lbl" x="480" y="364">GPIO32</text>
+        <text class="lbl" x="630" y="104" text-anchor="end">3V3</text><text class="lbl" x="630" y="154" text-anchor="end">GPIO18</text><text class="lbl" x="630" y="194" text-anchor="end">GPIO23</text><text class="lbl" x="630" y="234" text-anchor="end">GPIO16</text><text class="lbl" x="630" y="274" text-anchor="end">GPIO17</text><text class="lbl" x="630" y="314" text-anchor="end">GPIO13</text><text class="lbl" x="630" y="354" text-anchor="end">GPIO14</text><text class="lbl" x="630" y="394" text-anchor="end">GPIO27</text><text class="lbl" x="630" y="424" text-anchor="end">GND</text>
+        <!-- ESP32 to TFT -->
+        <path class="w" style="stroke:var(--w-red)" d="M640 100 H760"/>
+        <path class="w" style="stroke:var(--w-red)" d="M760 125 H745 V100"/><circle cx="745" cy="100" r="4" style="fill:var(--w-red)"/>
+        <path class="w" style="stroke:var(--w-scl)" d="M640 150 H760"/>
+        <path class="w" style="stroke:var(--w-sda)" d="M640 190 H760"/>
+        <path class="w" style="stroke:var(--w-dc)" d="M640 230 H760"/>
+        <path class="w" style="stroke:var(--w-res)" d="M640 270 H760"/>
+        <path class="w" style="stroke:var(--w-cs)" d="M640 310 H760"/>
+        <path class="w dash" style="stroke:var(--w-cs)" d="M640 350 H668"/><text class="sm" x="672" y="354">screen 2 CS</text>
+        <path class="w dash" style="stroke:var(--w-cs)" d="M640 390 H668"/><text class="sm" x="672" y="394">screen 3 CS</text>
+        <path class="w" style="stroke:var(--ink)" d="M640 420 H760"/>
+        <!-- TFT -->
+        <rect class="box" x="760" y="80" width="210" height="370" rx="4"/>
+        <text class="lbl" x="770" y="104">VCC</text><text class="lbl" x="770" y="129">BLK</text><text class="lbl" x="770" y="154">SCL</text><text class="lbl" x="770" y="194">SDA</text><text class="lbl" x="770" y="234">DC</text><text class="lbl" x="770" y="274">RES</text><text class="lbl" x="770" y="314">CS</text><text class="lbl" x="770" y="424">GND</text>
+        <rect x="826" y="170" width="132" height="36" rx="2" style="fill:#06090c;stroke:var(--ink)"/>
+        <text x="834" y="186" style="fill:#f2f5f7;font-size:10px;font-weight:600">GPO2-10A-WH</text>
+        <text x="834" y="199" style="fill:#3ccf7e;font-size:8px">IN STOCK</text>
+        <text x="948" y="198" text-anchor="end" style="fill:#3ccf7e;font-size:20px;font-weight:600">12</text>
+        <text class="ttl" x="892" y="244" text-anchor="middle">2.25" TFT</text>
+        <text class="sm" x="892" y="262" text-anchor="middle">76×284 · ST7789 · 8 pin</text>
+      </svg>
+    </div>
+    <p class="muted">BLK (backlight) is tied to 3V3 so the screen stays lit. Later it moves to a GPIO through a small transistor so the screens can dim.</p>
+  </section>
+
+  <section>
+    <h2><span class="ref">03</span>Pin schedule</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>From</th><th>Pin</th><th>To ESP32</th><th>Bin 1 / 2 / 3</th></tr></thead>
+        <tbody>
+          <tr><td>Load cell</td><td><span class="sw" style="background:var(--w-red)"></span>red / <span class="sw" style="background:var(--ink)"></span>black / <span class="sw" style="background:var(--w-white)"></span>white / <span class="sw" style="background:var(--w-green)"></span>green</td><td>HX711 E+ / E− / A− / A+</td><td>same on every bin</td></tr>
+          <tr><td>HX711</td><td><span class="sw" style="background:var(--w-red)"></span>VCC</td><td class="mono">3V3</td><td>shared</td></tr>
+          <tr><td>HX711</td><td><span class="sw" style="background:var(--ink)"></span>GND</td><td class="mono">GND</td><td>shared</td></tr>
+          <tr><td>HX711</td><td><span class="sw" style="background:var(--w-sck)"></span>SCK</td><td class="mono">GPIO25</td><td>shared</td></tr>
+          <tr><td>HX711</td><td><span class="sw" style="background:var(--w-dt)"></span>DT</td><td class="mono">GPIO34 / 35 / 32</td><td><b>one each</b></td></tr>
+          <tr><td>Screen</td><td><span class="sw" style="background:var(--w-red)"></span>VCC + BLK</td><td class="mono">3V3</td><td>shared</td></tr>
+          <tr><td>Screen</td><td><span class="sw" style="background:var(--ink)"></span>GND</td><td class="mono">GND</td><td>shared</td></tr>
+          <tr><td>Screen</td><td><span class="sw" style="background:var(--w-scl)"></span>SCL</td><td class="mono">GPIO18</td><td>shared</td></tr>
+          <tr><td>Screen</td><td><span class="sw" style="background:var(--w-sda)"></span>SDA</td><td class="mono">GPIO23</td><td>shared</td></tr>
+          <tr><td>Screen</td><td><span class="sw" style="background:var(--w-dc)"></span>DC</td><td class="mono">GPIO16</td><td>shared</td></tr>
+          <tr><td>Screen</td><td><span class="sw" style="background:var(--w-res)"></span>RES</td><td class="mono">GPIO17</td><td>shared</td></tr>
+          <tr><td>Screen</td><td><span class="sw" style="background:var(--w-cs)"></span>CS</td><td class="mono">GPIO13 / 14 / 27</td><td><b>one each</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="ref">04</span>Mounting a scale (side view)</h2>
+    <p class="muted">The bar measures by bending slightly. Bolt one end down and hang the platform off the other end, with spacers so the middle never touches anything.</p>
+    <div class="diagram mount scroll">
+      <svg viewBox="0 0 600 230" role="img" aria-label="Side view of load cell mounting between base board and top plate">
+        <rect x="80" y="20" width="440" height="58" rx="3" class="dash" style="fill:none;stroke:var(--muted);stroke-width:1.5"/>
+        <text class="sm" x="300" y="53" text-anchor="middle">bin sits here</text>
+        <rect x="40" y="82" width="520" height="16" rx="2" style="fill:var(--alu);stroke:var(--ink)"/>
+        <text class="sm" x="372" y="94">top plate (3 mm alu / 6 mm acrylic)</text>
+        <rect x="300" y="98" width="60" height="16" style="fill:var(--panel);stroke:var(--ink)"/>
+        <rect x="60" y="114" width="300" height="26" rx="2" style="fill:var(--alu);stroke:var(--ink);stroke-width:1.5"/>
+        <rect x="190" y="118" width="40" height="18" rx="2" style="fill:var(--sheet);stroke:var(--ink)"/>
+        <rect x="60" y="140" width="60" height="16" style="fill:var(--panel);stroke:var(--ink)"/>
+        <rect x="20" y="156" width="560" height="22" rx="2" style="fill:var(--wood);stroke:var(--ink)"/>
+        <text class="sm" x="548" y="171" text-anchor="end" style="fill:var(--ink)">base board (ply)</text>
+        <path d="M75 114 V178 M105 114 V178" style="stroke:var(--ink);stroke-width:3"/>
+        <path d="M315 82 V140 M345 82 V140" style="stroke:var(--ink);stroke-width:3"/>
+        <text class="lbl" x="90" y="200" text-anchor="middle">fixed end</text>
+        <text class="sm" x="90" y="215" text-anchor="middle">bolted to base</text>
+        <text class="lbl" x="330" y="200" text-anchor="middle">load end</text>
+        <text class="sm" x="330" y="215" text-anchor="middle">bolted to top plate</text>
+        <path d="M240 148 L240 166" style="stroke:var(--accent);stroke-width:1.5"/>
+        <text x="246" y="152" style="font-size:11px;fill:var(--accent)">gap: must flex freely</text>
+        <text x="210" y="133" text-anchor="middle" style="font-size:9px;fill:var(--muted)">gauge</text>
+      </svg>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="ref">05</span>Before you power up</h2>
+    <div class="notes">
+      <div class="note warn"><b>3V3 only</b><p>Power the HX711s and screens from the ESP32's 3V3 pin, not 5V. At 5V the HX711's data line can damage the ESP32.</p></div>
+      <div class="note warn"><b>Which ESP32 did you order?</b><p>These pins suit the standard ESP32 DevKit (WROOM, 30 or 38 pin). If yours is an S3, C3 or "Super Mini", tell me and I'll redo the pin map.</p></div>
+      <div class="note"><b>Solder the HX711 pins</b><p>The boards come with loose header pins. Solder them, or solder short leads straight on. Keep the load cell's own wires short and don't cut them.</p></div>
+      <div class="note"><b>Order the pin-header screen</b><p>For the bench, get the 8-pin module version. The bare 18 mm screen has a fine ribbon that needs an adapter. Save that for the real cabinet.</p></div>
+      <div class="note"><b>Arrow points down</b><p>Most bar cells have an arrow on the end. It should point the way the weight pushes. If readings go negative when you add weight, flip the cell or swap A+ and A−.</p></div>
+      <div class="note"><b>What a pass looks like</b><p>Each bin reads within 2–3 g of the calibration weights, holds steady over an hour, and counts 20 GPOs correctly as you add and remove them.</p></div>
+    </div>
+  </section>
+
+  <footer class="titleblock" aria-label="Drawing details">
+    <div><span>Project</span><strong>Saturn Stock Shelves: bench test rig</strong></div>
+    <div><span>Drawing</span><strong class="mono">SS-TR-01</strong></div>
+    <div><span>Rev</span><strong class="mono">A</strong></div>
+    <div><span>Date</span><strong class="mono">01.11.26</strong></div>
+    <div><span>Status</span><strong>For bench test</strong></div>
+  </footer>
+
+</article>
+</div>
