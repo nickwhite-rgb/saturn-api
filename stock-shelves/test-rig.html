@@ -91,35 +91,64 @@ svg .dash { stroke-dasharray: 6 5; }
 
   <header class="head">
     <span class="eyebrow">Stock Shelves · bench test rig</span>
-    <h1>3-bin test rig: wiring and parts</h1>
-    <p class="muted">One ESP32, three scales and three bin screens on the bench. It proves the counting and the screens before you build a full 10-bin module. Pin numbers suit a standard ESP32 DevKit (30 or 38 pin).</p>
+    <h1>6-bin test rig: wiring and parts</h1>
+    <p class="muted">One ESP32, six scales and six bin screens, plus the 10" touchscreen, on the bench. It proves the counting and the screens before you build a full 10-bin module. Pin numbers suit a standard ESP32 DevKit (30 or 38 pin).</p>
   </header>
 
   <section>
     <h2><span class="ref">01</span>What to order</h2>
-    <p class="muted">You've already got the ESP32. Prices are rough AUD before GST. AliExpress unless noted.</p>
+    <p class="muted">Prices are rough AUD before GST. AliExpress adds 10% GST at checkout. Each table covers one part of the rig.</p>
+    <h3 style="font-family:var(--f-head);font-size:18px;margin:6px 0 0">Scales and bin screens</h3>
     <div class="scroll">
       <table>
         <thead><tr><th>Item</th><th>Search / where</th><th class="r">Qty</th><th class="r">~Each</th><th class="r">~Total</th></tr></thead>
         <tbody>
-          <tr><td>5 kg load cell + HX711</td><td>Makeit "5kg and HX711" (1 spare)</td><td class="r num">3</td><td class="r num">$5.30</td><td class="r num">$16</td></tr>
-          <tr><td>10 kg load cell + HX711</td><td>Makeit "10kg and HX711"</td><td class="r num">1</td><td class="r num">$6</td><td class="r num">$6</td></tr>
-          <tr><td>2.25" TFT 76×284, 8-pin, <b>with pin header</b></td><td><code>2.25 inch TFT 76x284 ST7789 8P</code></td><td class="r num">3</td><td class="r num">$6</td><td class="r num">$18</td></tr>
-          <tr><td>ESP32 screw-terminal breakout (match 30 or 38 pin)</td><td><code>ESP32 expansion board screw terminal</code></td><td class="r num">1</td><td class="r num">$4</td><td class="r num">$4</td></tr>
-          <tr><td>Breadboard 830 + jumper kit</td><td><code>830 breadboard jumper wire kit</code></td><td class="r num">1</td><td class="r num">$6</td><td class="r num">$6</td></tr>
-          <tr><td>Dupont leads 20 cm, female–female and male–female</td><td><code>dupont jumper wire 20cm 40pcs</code></td><td class="r num">2</td><td class="r num">$3</td><td class="r num">$6</td></tr>
+          <tr><td>5 kg load cell + HX711</td><td>Makeit "5kg and HX711" (6 + 1 spare)</td><td class="r num">7</td><td class="r num">$5.30</td><td class="r num">$37</td></tr>
+          <tr><td>2.25" TFT 76×284, 8-pin, <b>with pin header</b></td><td><code>2.25 inch TFT 76x284 ST7789 8P</code> (6 + 1 spare)</td><td class="r num">7</td><td class="r num">$6</td><td class="r num">$42</td></tr>
+          <tr><td>ESP32 DevKit, WROOM, 38-pin (skip if yours suit)</td><td><code>ESP32 DevKitC 38 pin WROOM-32</code></td><td class="r num">2</td><td class="r num">$6</td><td class="r num">$12</td></tr>
+          <tr><td>ESP32 screw-terminal breakout (38-pin)</td><td><code>ESP32 38 pin expansion board screw terminal</code></td><td class="r num">1</td><td class="r num">$4</td><td class="r num">$4</td></tr>
+          <tr><td>Breadboard 830 + jumper kit</td><td><code>830 breadboard jumper wire kit</code></td><td class="r num">2</td><td class="r num">$6</td><td class="r num">$12</td></tr>
+          <tr><td>Dupont leads 20 cm, female–female and male–female</td><td><code>dupont jumper wire 20cm 40pcs</code></td><td class="r num">3</td><td class="r num">$3</td><td class="r num">$9</td></tr>
           <tr><td>Calibration weights (100 g – 1 kg)</td><td><code>calibration weight set 1kg</code></td><td class="r num">1</td><td class="r num">$15</td><td class="r num">$15</td></tr>
-          <tr><td>M4 + M5 bolts, nuts, washers</td><td>Bunnings</td><td class="r num">—</td><td class="r num"></td><td class="r num">$10</td></tr>
-          <tr class="have"><td>Ply/MDF offcuts, 3 small tubs, USB cable, soldering iron</td><td>The shed</td><td class="r num">—</td><td class="r num"></td><td class="r num">$0</td></tr>
+          <tr><td>M4 + M5 bolts, nuts, washers</td><td>Bunnings</td><td class="r num">—</td><td class="r num"></td><td class="r num">$15</td></tr>
+          <tr class="have"><td>Ply/MDF offcuts for 6 bases and 6 top plates, 6 small tubs, USB cable, soldering iron</td><td>The shed</td><td class="r num">—</td><td class="r num"></td><td class="r num">$0</td></tr>
         </tbody>
-        <tfoot><tr><td colspan="4">Test rig total</td><td class="r num">≈ $80</td></tr></tfoot>
+        <tfoot><tr><td colspan="4">Scales subtotal</td><td class="r num">≈ $145</td></tr></tfoot>
+      </table>
+    </div>
+    <h3 style="font-family:var(--f-head);font-size:18px;margin:6px 0 0">Touchscreen</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Item</th><th>Search / where</th><th class="r">Qty</th><th class="r">~Total</th></tr></thead>
+        <tbody>
+          <tr><td>Raspberry Pi 5, 8 GB, with active cooler and case</td><td>Core Electronics / Pakronics / Little Bird (not AliExpress, which has clones)</td><td class="r num">1</td><td class="r num">$200</td></tr>
+          <tr><td>Official Pi 5 27 W USB-C power supply</td><td>same</td><td class="r num">1</td><td class="r num">$20</td></tr>
+          <tr><td>64 GB high-endurance microSD</td><td>same / JB Hi-Fi</td><td class="r num">1</td><td class="r num">$20</td></tr>
+          <tr><td>10.1" 1280×800 capacitive HDMI touchscreen</td><td><code>10.1 inch 1280x800 HDMI capacitive touch raspberry pi</code></td><td class="r num">1</td><td class="r num">$130</td></tr>
+          <tr><td>Micro-HDMI to HDMI cable (the Pi 5 has micro-HDMI)</td><td>local or AliExpress</td><td class="r num">1</td><td class="r num">$10</td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="3">Touchscreen subtotal</td><td class="r num">≈ $380</td></tr></tfoot>
+      </table>
+    </div>
+    <h3 style="font-family:var(--f-head);font-size:18px;margin:6px 0 0">Optional: test sign-in too</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Item</th><th>Search / where</th><th class="r">Qty</th><th class="r">~Total</th></tr></thead>
+        <tbody>
+          <tr><td>Camera Module 3 Wide + Pi 5 camera cable</td><td>Pakronics / Little Bird</td><td class="r num">1</td><td class="r num">$75</td></tr>
+          <tr><td>USB NFC reader + 10 key fobs</td><td><code>ACR122U NFC reader USB</code> · <code>13.56MHz Mifare key fob</code></td><td class="r num">1</td><td class="r num">$48</td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="3">Rig total: ≈ $525, or ≈ $650 with sign-in</td><td class="r num"></td></tr></tfoot>
+      </table>
+    </div>
+    <p class="muted"><b>Cheaper option:</b> run the touchscreen app on an old laptop or tablet for the first test. That skips the $380 touchscreen section until the scales are proven.</p>
       </table>
     </div>
   </section>
 
   <section>
     <h2><span class="ref">02</span>Wiring: bin 1 shown</h2>
-    <p class="muted">Bins 2 and 3 wire exactly the same. They share power, ground and the clock lines. Only the yellow-dashed lines are different for each one. <b>Run everything off 3V3, not 5V.</b></p>
+    <p class="muted">Bins 2 to 6 wire exactly the same. They share power, ground and the clock lines. Only the yellow-dashed lines are different for each one. <b>Run everything off 3V3, not 5V.</b></p>
     <div class="diagram scroll">
       <svg viewBox="0 0 1000 480" role="img" aria-label="Wiring diagram: load cell to HX711 to ESP32 to 2.25 inch TFT screen">
         <!-- load cell -->
@@ -145,13 +174,13 @@ svg .dash { stroke-dasharray: 6 5; }
         <path class="w" style="stroke:var(--w-dt)" d="M390 230 H470"/>
         <path class="w" style="stroke:var(--w-sck)" d="M390 270 H470"/>
         <path class="w dash" style="stroke:var(--w-cs)" d="M470 320 H420"/><text class="sm" x="414" y="324" text-anchor="end">bin 2 DT</text>
-        <path class="w dash" style="stroke:var(--w-cs)" d="M470 360 H420"/><text class="sm" x="414" y="364" text-anchor="end">bin 3 DT</text>
+        <path class="w dash" style="stroke:var(--w-cs)" d="M470 360 H420"/><text class="sm" x="414" y="364" text-anchor="end">bins 3–6 DT</text>
         <!-- ESP32 -->
         <rect class="box" x="470" y="70" width="170" height="380" rx="6"/>
         <rect x="535" y="450" width="40" height="14" rx="2" style="fill:var(--alu);stroke:var(--ink)"/>
         <text class="ttl" x="480" y="100">ESP32</text>
-        <text class="lbl" x="480" y="154">3V3</text><text class="lbl" x="480" y="184">GND</text><text class="lbl" x="480" y="234">GPIO34</text><text class="lbl" x="480" y="274">GPIO25</text><text class="lbl" x="480" y="324">GPIO35</text><text class="lbl" x="480" y="364">GPIO32</text>
-        <text class="lbl" x="630" y="104" text-anchor="end">3V3</text><text class="lbl" x="630" y="154" text-anchor="end">GPIO18</text><text class="lbl" x="630" y="194" text-anchor="end">GPIO23</text><text class="lbl" x="630" y="234" text-anchor="end">GPIO16</text><text class="lbl" x="630" y="274" text-anchor="end">GPIO17</text><text class="lbl" x="630" y="314" text-anchor="end">GPIO13</text><text class="lbl" x="630" y="354" text-anchor="end">GPIO14</text><text class="lbl" x="630" y="394" text-anchor="end">GPIO27</text><text class="lbl" x="630" y="424" text-anchor="end">GND</text>
+        <text class="lbl" x="480" y="154">3V3</text><text class="lbl" x="480" y="184">GND</text><text class="lbl" x="480" y="234">GPIO34</text><text class="lbl" x="480" y="274">GPIO25</text><text class="lbl" x="480" y="324">GPIO35</text><text class="lbl" x="480" y="364">GPIO36…</text>
+        <text class="lbl" x="630" y="104" text-anchor="end">3V3</text><text class="lbl" x="630" y="154" text-anchor="end">GPIO18</text><text class="lbl" x="630" y="194" text-anchor="end">GPIO23</text><text class="lbl" x="630" y="234" text-anchor="end">GPIO16</text><text class="lbl" x="630" y="274" text-anchor="end">GPIO17</text><text class="lbl" x="630" y="314" text-anchor="end">GPIO13</text><text class="lbl" x="630" y="354" text-anchor="end">GPIO14</text><text class="lbl" x="630" y="394" text-anchor="end">GPIO27…</text><text class="lbl" x="630" y="424" text-anchor="end">GND</text>
         <!-- ESP32 to TFT -->
         <path class="w" style="stroke:var(--w-red)" d="M640 100 H760"/>
         <path class="w" style="stroke:var(--w-red)" d="M760 125 H745 V100"/><circle cx="745" cy="100" r="4" style="fill:var(--w-red)"/>
@@ -161,7 +190,7 @@ svg .dash { stroke-dasharray: 6 5; }
         <path class="w" style="stroke:var(--w-res)" d="M640 270 H760"/>
         <path class="w" style="stroke:var(--w-cs)" d="M640 310 H760"/>
         <path class="w dash" style="stroke:var(--w-cs)" d="M640 350 H668"/><text class="sm" x="672" y="354">screen 2 CS</text>
-        <path class="w dash" style="stroke:var(--w-cs)" d="M640 390 H668"/><text class="sm" x="672" y="394">screen 3 CS</text>
+        <path class="w dash" style="stroke:var(--w-cs)" d="M640 390 H668"/><text class="sm" x="672" y="394">screens 3–6</text>
         <path class="w" style="stroke:var(--ink)" d="M640 420 H760"/>
         <!-- TFT -->
         <rect class="box" x="760" y="80" width="210" height="370" rx="4"/>
@@ -181,20 +210,20 @@ svg .dash { stroke-dasharray: 6 5; }
     <h2><span class="ref">03</span>Pin schedule</h2>
     <div class="scroll">
       <table>
-        <thead><tr><th>From</th><th>Pin</th><th>To ESP32</th><th>Bin 1 / 2 / 3</th></tr></thead>
+        <thead><tr><th>From</th><th>Pin</th><th>To ESP32</th><th>Per bin</th></tr></thead>
         <tbody>
           <tr><td>Load cell</td><td><span class="sw" style="background:var(--w-red)"></span>red / <span class="sw" style="background:var(--ink)"></span>black / <span class="sw" style="background:var(--w-white)"></span>white / <span class="sw" style="background:var(--w-green)"></span>green</td><td>HX711 E+ / E− / A− / A+</td><td>same on every bin</td></tr>
           <tr><td>HX711</td><td><span class="sw" style="background:var(--w-red)"></span>VCC</td><td class="mono">3V3</td><td>shared</td></tr>
           <tr><td>HX711</td><td><span class="sw" style="background:var(--ink)"></span>GND</td><td class="mono">GND</td><td>shared</td></tr>
           <tr><td>HX711</td><td><span class="sw" style="background:var(--w-sck)"></span>SCK</td><td class="mono">GPIO25</td><td>shared</td></tr>
-          <tr><td>HX711</td><td><span class="sw" style="background:var(--w-dt)"></span>DT</td><td class="mono">GPIO34 / 35 / 32</td><td><b>one each</b></td></tr>
+          <tr><td>HX711</td><td><span class="sw" style="background:var(--w-dt)"></span>DT</td><td class="mono">GPIO34 / 35 / 36 / 39 / 32 / 33</td><td><b>one each</b></td></tr>
           <tr><td>Screen</td><td><span class="sw" style="background:var(--w-red)"></span>VCC + BLK</td><td class="mono">3V3</td><td>shared</td></tr>
           <tr><td>Screen</td><td><span class="sw" style="background:var(--ink)"></span>GND</td><td class="mono">GND</td><td>shared</td></tr>
           <tr><td>Screen</td><td><span class="sw" style="background:var(--w-scl)"></span>SCL</td><td class="mono">GPIO18</td><td>shared</td></tr>
           <tr><td>Screen</td><td><span class="sw" style="background:var(--w-sda)"></span>SDA</td><td class="mono">GPIO23</td><td>shared</td></tr>
           <tr><td>Screen</td><td><span class="sw" style="background:var(--w-dc)"></span>DC</td><td class="mono">GPIO16</td><td>shared</td></tr>
           <tr><td>Screen</td><td><span class="sw" style="background:var(--w-res)"></span>RES</td><td class="mono">GPIO17</td><td>shared</td></tr>
-          <tr><td>Screen</td><td><span class="sw" style="background:var(--w-cs)"></span>CS</td><td class="mono">GPIO13 / 14 / 27</td><td><b>one each</b></td></tr>
+          <tr><td>Screen</td><td><span class="sw" style="background:var(--w-cs)"></span>CS</td><td class="mono">GPIO13 / 14 / 27 / 26 / 21 / 22</td><td><b>one each</b></td></tr>
         </tbody>
       </table>
     </div>
@@ -231,7 +260,7 @@ svg .dash { stroke-dasharray: 6 5; }
   <section>
     <h2><span class="ref">05</span>Before you power up</h2>
     <div class="notes">
-      <div class="note warn"><b>3V3 only</b><p>Power the HX711s and screens from the ESP32's 3V3 pin, not 5V. At 5V the HX711's data line can damage the ESP32.</p></div>
+      <div class="note warn"><b>3V3 only</b><p>Power the HX711s and screens from the ESP32's 3V3 pin, not 5V. At 5V the HX711's data line can damage the ESP32. Six screens and six scales draw about 0.4 A, so feed the ESP32 from a decent 5 V 2 A USB supply, not a laptop port.</p></div>
       <div class="note warn"><b>Which ESP32 did you order?</b><p>These pins suit the standard ESP32 DevKit (WROOM, 30 or 38 pin). If yours is an S3, C3 or "Super Mini", tell me and I'll redo the pin map.</p></div>
       <div class="note"><b>Solder the HX711 pins</b><p>The boards come with loose header pins. Solder them, or solder short leads straight on. Keep the load cell's own wires short and don't cut them.</p></div>
       <div class="note"><b>Order the pin-header screen</b><p>For the bench, get the 8-pin module version. The bare 18 mm screen has a fine ribbon that needs an adapter. Save that for the real cabinet.</p></div>
