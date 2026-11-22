@@ -87,4 +87,45 @@ async function fetchLive(site) {
   }
 }
 
-module.exports = { encrypt, decrypt, cleanUrl, entityList, fetchLive };
+// Raw access used by the I/O page. Returns Map(entity_id -> state object).
+async function fetchStates(site) {
+  if (!site.ha_url || !site.ha_token_enc) throw new Error('Home Assistant is not set up for this site (Settings → Live data).');
+  const token = decrypt(site.ha_token_enc);
+  if (!token) throw new Error('Stored Home Assistant token could not be read. Re-enter it in Settings.');
+  let res;
+  try {
+    res = await fetch(site.ha_url + '/api/states', {
+      headers: { Authorization: 'Bearer ' + token },
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch (err) {
+    throw new Error('Could not reach Home Assistant: ' + (err.name === 'TimeoutError' ? 'no answer within 8 seconds' : err.message));
+  }
+  if (res.status === 401) throw new Error('Home Assistant rejected the token (401).');
+  if (!res.ok) throw new Error('Home Assistant returned HTTP ' + res.status);
+  const all = await res.json();
+  return new Map(all.map(s => [s.entity_id, s]));
+}
+
+// Call a Home Assistant service, e.g. callService(site, 'modbus', 'write_register', {...})
+async function callService(site, domain, service, data) {
+  const token = decrypt(site.ha_token_enc);
+  if (!site.ha_url || !token) throw new Error('Home Assistant is not set up for this site.');
+  let res;
+  try {
+    res = await fetch(`${site.ha_url}/api/services/${domain}/${service}`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch (err) {
+    throw new Error('Could not reach Home Assistant: ' + (err.name === 'TimeoutError' ? 'no answer within 8 seconds' : err.message));
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Home Assistant refused the command (HTTP ${res.status}) ${text.slice(0, 200)}`);
+  }
+}
+
+module.exports = { encrypt, decrypt, cleanUrl, entityList, fetchLive, fetchStates, callService };

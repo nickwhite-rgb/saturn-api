@@ -1,0 +1,705 @@
+# =====================================================================
+# SATURN SITE CONTROLS - HOME ASSISTANT PACKAGE: SHED (house HA)
+# 2 compressors lead/lag, condensate drains, tank level, tank pump.
+# I/O forcing from Saturn Command: registers 1084-1091 (%MW60-%MW67), written via modbus.write_register.
+# Talks to the shed OpenPLC over Modbus TCP.
+# Install: save as /config/packages/shed.yaml and make sure
+#   configuration.yaml contains:
+#     homeassistant:
+#       packages: !include_dir_named packages
+# Then: Developer tools -> YAML -> Check configuration -> Restart.
+# Replace notify.notify with your phone, e.g. notify.mobile_app_nicks_phone
+# =====================================================================
+
+modbus:
+- name: shed_plc
+  type: tcp
+  host: 192.168.10.10
+  port: 502
+  timeout: 5
+  sensors:
+  - name: Shed air pressure
+    unique_id: shed_air_pressure
+    slave: 1
+    address: 1064
+    input_type: holding
+    data_type: int16
+    scale: 0.01
+    precision: 2
+    unit_of_measurement: bar
+    device_class: pressure
+    state_class: measurement
+    scan_interval: 5
+  - name: Shed C1 state code
+    unique_id: shed_c1_state_code
+    slave: 1
+    address: 1065
+    input_type: holding
+    data_type: int16
+    scan_interval: 5
+  - name: Shed C1 fault code
+    unique_id: shed_c1_fault_code
+    slave: 1
+    address: 1066
+    input_type: holding
+    data_type: int16
+    scan_interval: 5
+  - name: Shed C1 starts this hour
+    unique_id: shed_c1_starts_hr
+    slave: 1
+    address: 1067
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+  - name: Shed PLC comms ok
+    unique_id: shed_plc_comms_ok
+    slave: 1
+    address: 1068
+    input_type: holding
+    data_type: int16
+    scan_interval: 15
+  - name: Shed drains open
+    unique_id: shed_drains_open
+    slave: 1
+    address: 1069
+    input_type: holding
+    data_type: int16
+    scan_interval: 5
+  - name: Shed tank level
+    unique_id: shed_tank_level
+    slave: 1
+    address: 1070
+    input_type: holding
+    data_type: int16
+    scale: 0.1
+    precision: 1
+    unit_of_measurement: '%'
+    state_class: measurement
+    scan_interval: 30
+  - name: Shed pump state code
+    unique_id: shed_pump_state_code
+    slave: 1
+    address: 1071
+    input_type: holding
+    data_type: int16
+    scan_interval: 10
+  - name: Shed PLC inputs
+    unique_id: shed_plc_inputs
+    slave: 1
+    address: 1072
+    input_type: holding
+    data_type: uint16
+    scan_interval: 2
+  - name: Shed PLC outputs
+    unique_id: shed_plc_outputs
+    slave: 1
+    address: 1073
+    input_type: holding
+    data_type: uint16
+    scan_interval: 2
+  - name: Shed pump fault code
+    unique_id: shed_pump_fault_code
+    slave: 1
+    address: 1074
+    input_type: holding
+    data_type: int16
+    scan_interval: 10
+  - name: Shed C2 state code
+    unique_id: shed_c2_state_code
+    slave: 1
+    address: 1075
+    input_type: holding
+    data_type: int16
+    scan_interval: 5
+  - name: Shed C2 fault code
+    unique_id: shed_c2_fault_code
+    slave: 1
+    address: 1076
+    input_type: holding
+    data_type: int16
+    scan_interval: 5
+  - name: Shed C2 starts this hour
+    unique_id: shed_c2_starts_hr
+    slave: 1
+    address: 1077
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+  - name: Shed lead compressor
+    unique_id: shed_lead_compressor
+    slave: 1
+    address: 1078
+    input_type: holding
+    data_type: int16
+    scan_interval: 30
+  - name: Shed C1 run seconds
+    unique_id: shed_c1_run_seconds
+    slave: 1
+    address: 2048
+    input_type: holding
+    data_type: int32
+    scan_interval: 60
+  - name: Shed C1 starts total
+    unique_id: shed_c1_starts_total
+    slave: 1
+    address: 2050
+    input_type: holding
+    data_type: int32
+    state_class: total_increasing
+    scan_interval: 60
+  - name: Shed pump run seconds
+    unique_id: shed_pump_run_seconds
+    slave: 1
+    address: 2052
+    input_type: holding
+    data_type: int32
+    scan_interval: 60
+  - name: Shed drains total
+    unique_id: shed_drains_total
+    slave: 1
+    address: 2054
+    input_type: holding
+    data_type: int32
+    state_class: total_increasing
+    scan_interval: 60
+  - name: Shed C2 run seconds
+    unique_id: shed_c2_run_seconds
+    slave: 1
+    address: 2056
+    input_type: holding
+    data_type: int32
+    scan_interval: 60
+  - name: Shed C2 starts total
+    unique_id: shed_c2_starts_total
+    slave: 1
+    address: 2058
+    input_type: holding
+    data_type: int32
+    state_class: total_increasing
+    scan_interval: 60
+  - name: Shed force active
+    unique_id: shed_force_active
+    slave: 1
+    address: 1079
+    input_type: holding
+    data_type: int16
+    scan_interval: 3
+  - name: Shed force remaining
+    unique_id: shed_force_remaining
+    slave: 1
+    address: 1080
+    input_type: holding
+    data_type: int16
+    scan_interval: 5
+  - name: Shed PLC inputs effective
+    unique_id: shed_plc_inputs_effective
+    slave: 1
+    address: 1081
+    input_type: holding
+    data_type: uint16
+    scan_interval: 2
+  - name: Shed PLC outputs logic
+    unique_id: shed_plc_outputs_logic
+    slave: 1
+    address: 1082
+    input_type: holding
+    data_type: uint16
+    scan_interval: 2
+  - name: Shed force DI mask
+    unique_id: shed_force_di_mask
+    slave: 1
+    address: 1084
+    input_type: holding
+    data_type: uint16
+    scan_interval: 3
+  - name: Shed force DI value
+    unique_id: shed_force_di_value
+    slave: 1
+    address: 1085
+    input_type: holding
+    data_type: uint16
+    scan_interval: 3
+  - name: Shed force DQ mask
+    unique_id: shed_force_dq_mask
+    slave: 1
+    address: 1086
+    input_type: holding
+    data_type: uint16
+    scan_interval: 3
+  - name: Shed force DQ value
+    unique_id: shed_force_dq_value
+    slave: 1
+    address: 1087
+    input_type: holding
+    data_type: uint16
+    scan_interval: 3
+  - name: Shed force AI mask
+    unique_id: shed_force_ai_mask
+    slave: 1
+    address: 1088
+    input_type: holding
+    data_type: uint16
+    scan_interval: 3
+  - name: Shed AI0 raw
+    unique_id: shed_ai0_raw
+    slave: 1
+    address: 1094
+    input_type: holding
+    data_type: int16
+    scan_interval: 3
+  - name: Shed AI1 raw
+    unique_id: shed_ai1_raw
+    slave: 1
+    address: 1095
+    input_type: holding
+    data_type: int16
+    scan_interval: 3
+input_select:
+  shed_compressor_mode:
+    name: Shed compressed air mode
+    options:
+    - Auto (schedule)
+    - 'On'
+    - 'Off'
+    icon: mdi:air-filter
+  shed_lead_mode:
+    name: Shed lead compressor
+    options:
+    - Auto rotate
+    - Compressor 1
+    - Compressor 2
+    icon: mdi:swap-horizontal
+input_boolean:
+  shed_pump_enable:
+    name: Shed tank pump enabled
+    icon: mdi:water-pump
+  shed_lights:
+    name: Shed lights (PLC DQ8)
+    icon: mdi:lightbulb
+schedule:
+  shed_compressor:
+    name: Shed compressed air hours
+    monday:
+    - from: 06:00:00
+      to: '17:30:00'
+    tuesday:
+    - from: 06:00:00
+      to: '17:30:00'
+    wednesday:
+    - from: 06:00:00
+      to: '17:30:00'
+    thursday:
+    - from: 06:00:00
+      to: '17:30:00'
+    friday:
+    - from: 06:00:00
+      to: '17:30:00'
+    saturday:
+    - from: 07:00:00
+      to: '12:00:00'
+input_number:
+  shed_cut_in:
+    name: Shed lead cut-in
+    min: 3
+    max: 10
+    step: 0.1
+    unit_of_measurement: bar
+  shed_cut_out:
+    name: Shed lead cut-out
+    min: 4
+    max: 12
+    step: 0.1
+    unit_of_measurement: bar
+  shed_min_off:
+    name: Shed min off time
+    min: 30
+    max: 600
+    step: 10
+    unit_of_measurement: s
+  shed_max_run:
+    name: Shed max continuous run
+    min: 5
+    max: 999
+    step: 1
+    unit_of_measurement: min
+  shed_rest:
+    name: Shed forced rest after max run
+    min: 1
+    max: 60
+    step: 1
+    unit_of_measurement: min
+  shed_max_starts:
+    name: Shed max starts per hour
+    min: 2
+    max: 30
+    step: 1
+  shed_drain_interval:
+    name: Shed drain interval while running
+    min: 5
+    max: 240
+    step: 5
+    unit_of_measurement: min
+  shed_drain_open:
+    name: Shed drain open time
+    min: 1
+    max: 30
+    step: 1
+    unit_of_measurement: s
+  shed_fallback:
+    name: Shed keep running if HA lost for
+    min: 10
+    max: 1440
+    step: 10
+    unit_of_measurement: min
+  shed_sensor_mode:
+    name: Shed on transmitter fault (0 stop, 1 own switch)
+    min: 0
+    max: 1
+    step: 1
+    mode: box
+  shed_pt_range:
+    name: Shed pressure transmitter range (at 20 mA)
+    min: 1
+    max: 40
+    step: 1
+    unit_of_measurement: bar
+  shed_raw_4ma:
+    name: Analog raw value at 4 mA
+    min: -1000
+    max: 30000
+    step: 1
+    mode: box
+  shed_raw_20ma:
+    name: Analog raw value at 20 mA
+    min: 1
+    max: 32000
+    step: 1
+    mode: box
+  shed_tank_scale:
+    name: Tank level reading at 20 mA
+    min: 50
+    max: 300
+    step: 1
+    unit_of_measurement: '%'
+  shed_tank_low_off:
+    name: Tank pump lockout below
+    min: 1
+    max: 50
+    step: 1
+    unit_of_measurement: '%'
+  shed_tank_low_on:
+    name: Tank pump release above
+    min: 2
+    max: 80
+    step: 1
+    unit_of_measurement: '%'
+  shed_pump_max_run:
+    name: Tank pump max continuous run
+    min: 1
+    max: 999
+    step: 1
+    unit_of_measurement: min
+  shed_tank_capacity:
+    name: Tank capacity
+    min: 1000
+    max: 500000
+    step: 1000
+    unit_of_measurement: L
+    mode: box
+  shed_lag_offset:
+    name: Shed lag starts/stops this much lower
+    min: 0.1
+    max: 3
+    step: 0.1
+    unit_of_measurement: bar
+  shed_stagger:
+    name: Shed min gap between starts
+    min: 5
+    max: 120
+    step: 5
+    unit_of_measurement: s
+  shed_rotate_hours:
+    name: Shed swap lead every
+    min: 1
+    max: 720
+    step: 1
+    unit_of_measurement: h
+    mode: box
+template:
+- sensor:
+  - name: Shed C1 status
+    unique_id: shed_c1_status
+    state: |
+      {% set c = states('sensor.shed_c1_state_code') | int(-1) %}
+      {{ {0:'Off (schedule)', 1:'Ready', 2:'Running', 3:'Waiting (short-cycle / stagger)', 4:'Resting (duty cycle)', 5:'Blocked (starts per hour)', 6:'FAULT', 7:'Not in Auto', 8:'On own pressure switch'}.get(c, 'No comms') }}
+  - name: Shed C1 fault
+    unique_id: shed_c1_fault
+    state: |
+      {% set f = states('sensor.shed_c1_fault_code') | int(-1) %}
+      {{ {0:'None', 1:'Overload / thermal trip', 2:'Failed to start', 3:'Pressure transmitter fault', 4:'Pressure not rising'}.get(f, 'No comms') }}
+  - name: Shed C1 run hours
+    unique_id: shed_c1_run_hours
+    unit_of_measurement: h
+    state_class: total_increasing
+    state: '{{ (states(''sensor.shed_c1_run_seconds'') | float(0) / 3600) | round(1) }}'
+  - name: Shed C2 status
+    unique_id: shed_c2_status
+    state: |
+      {% set c = states('sensor.shed_c2_state_code') | int(-1) %}
+      {{ {0:'Off (schedule)', 1:'Ready', 2:'Running', 3:'Waiting (short-cycle / stagger)', 4:'Resting (duty cycle)', 5:'Blocked (starts per hour)', 6:'FAULT', 7:'Not in Auto', 8:'On own pressure switch'}.get(c, 'No comms') }}
+  - name: Shed C2 fault
+    unique_id: shed_c2_fault
+    state: |
+      {% set f = states('sensor.shed_c2_fault_code') | int(-1) %}
+      {{ {0:'None', 1:'Overload / thermal trip', 2:'Failed to start', 3:'Pressure transmitter fault', 4:'Pressure not rising'}.get(f, 'No comms') }}
+  - name: Shed C2 run hours
+    unique_id: shed_c2_run_hours
+    unit_of_measurement: h
+    state_class: total_increasing
+    state: '{{ (states(''sensor.shed_c2_run_seconds'') | float(0) / 3600) | round(1) }}'
+  - name: Shed pump status
+    unique_id: shed_pump_status
+    state: |
+      {% set p = states('sensor.shed_pump_state_code') | int(-1) %} {{ {0:'Off', 1:'Enabled', 2:'Running', 3:'Locked out (low water)',
+          4:'FAULT (ran too long)', 5:'Not in Auto'}.get(p, 'No comms') }}
+  - name: Shed pump run hours
+    unique_id: shed_pump_run_hours
+    unit_of_measurement: h
+    state_class: total_increasing
+    state: '{{ (states(''sensor.shed_pump_run_seconds'') | float(0) / 3600) | round(1) }}'
+  - name: Shed tank litres
+    unique_id: shed_tank_litres
+    unit_of_measurement: L
+    state_class: measurement
+    state: |
+      {{ (states('sensor.shed_tank_level') | float(0) / 100
+          * states('input_number.shed_tank_capacity') | float(0)) | round(0) }}
+  - name: Shed lead
+    unique_id: shed_lead
+    state: '{{ ''Compressor '' ~ (states(''sensor.shed_lead_compressor'') | int(0)) if states(''sensor.shed_lead_compressor'') | int(0) > 0 else ''No comms'' }}'
+- binary_sensor:
+  - name: Shed door closed
+    unique_id: shed_door_closed
+    state: '{{ (states(''sensor.shed_plc_inputs'') | int(0) // 512) % 2 == 1 }}'
+  - name: Shed PLC online
+    unique_id: shed_plc_online
+    device_class: connectivity
+    state: '{{ states(''sensor.shed_plc_comms_ok'') | int(0) == 1 }}'
+script:
+  shed_compressor_fault_reset:
+    alias: Shed - reset faults
+    icon: mdi:restart-alert
+    sequence:
+    - action: modbus.write_register
+      data:
+        hub: shed_plc
+        slave: 1
+        address: 1054
+        value: 1
+  shed_manual_drain:
+    alias: Shed - drain now
+    icon: mdi:water-off
+    sequence:
+    - action: modbus.write_register
+      data:
+        hub: shed_plc
+        slave: 1
+        address: 1055
+        value: 1
+  shed_swap_lead:
+    alias: Shed - swap lead compressor now
+    icon: mdi:swap-horizontal
+    sequence:
+    - action: modbus.write_register
+      data:
+        hub: shed_plc
+        slave: 1
+        address: 1056
+        value: 1
+automation:
+- id: shed_plc_sync
+  alias: Shed PLC - send heartbeat, schedule and setpoints (MW0-MW24)
+  mode: queued
+  max: 3
+  triggers:
+  - trigger: time_pattern
+    seconds: /15
+  - trigger: homeassistant
+    event: start
+  - trigger: state
+    entity_id:
+    - input_select.shed_compressor_mode
+    - schedule.shed_compressor
+    - input_boolean.shed_pump_enable
+    - input_boolean.shed_lights
+    - input_number.shed_cut_in
+    - input_number.shed_cut_out
+    - input_number.shed_min_off
+    - input_number.shed_max_run
+    - input_number.shed_rest
+    - input_number.shed_max_starts
+    - input_number.shed_drain_interval
+    - input_number.shed_drain_open
+    - input_number.shed_fallback
+    - input_number.shed_sensor_mode
+    - input_number.shed_pt_range
+    - input_number.shed_raw_4ma
+    - input_number.shed_raw_20ma
+    - input_number.shed_tank_scale
+    - input_number.shed_tank_low_off
+    - input_number.shed_tank_low_on
+    - input_number.shed_pump_max_run
+    - input_number.shed_lag_offset
+    - input_number.shed_stagger
+    - input_number.shed_rotate_hours
+    - input_select.shed_lead_mode
+  actions:
+  - action: modbus.write_register
+    data:
+      hub: shed_plc
+      slave: 1
+      address: 1024
+      value: |
+        {% set m = states('input_select.shed_compressor_mode') %} {% set en = 1 if m == 'On' or (m == 'Auto (schedule)' and is_state('schedule.shed_compressor', 'on')) else 0 %} {{ [
+          now().minute * 60 + now().second,
+          en,
+          1 if is_state('input_boolean.shed_pump_enable', 'on') else 0,
+          (states('input_number.shed_cut_in') | float(6.5) * 100) | round(0) | int,
+          (states('input_number.shed_cut_out') | float(8.0) * 100) | round(0) | int,
+          states('input_number.shed_min_off') | float(60) | int,
+          states('input_number.shed_max_run') | float(20) | int,
+          states('input_number.shed_rest') | float(10) | int,
+          states('input_number.shed_max_starts') | float(10) | int,
+          states('input_number.shed_drain_interval') | float(30) | int,
+          states('input_number.shed_drain_open') | float(5) | int,
+          states('input_number.shed_fallback') | float(240) | int,
+          states('input_number.shed_sensor_mode') | float(0) | int,
+          (states('input_number.shed_pt_range') | float(16) * 100) | round(0) | int,
+          states('input_number.shed_raw_4ma') | float(0) | int,
+          states('input_number.shed_raw_20ma') | float(10000) | int,
+          (states('input_number.shed_tank_scale') | float(100) * 10) | round(0) | int,
+          (states('input_number.shed_tank_low_off') | float(15) * 10) | round(0) | int,
+          (states('input_number.shed_tank_low_on') | float(25) * 10) | round(0) | int,
+          states('input_number.shed_pump_max_run') | float(30) | int,
+          256 if is_state('input_boolean.shed_lights', 'on') else 0,
+          (states('input_number.shed_lag_offset') | float(0.5) * 100) | round(0) | int,
+          states('input_number.shed_stagger') | float(10) | int,
+          states('input_number.shed_rotate_hours') | float(24) | int,
+          {'Auto rotate': 0, 'Compressor 1': 1, 'Compressor 2': 2}.get(states('input_select.shed_lead_mode'), 0)
+        ] }}
+- id: shed_c1_fault_alert
+  alias: Shed - compressor 1 fault alert
+  triggers:
+  - trigger: state
+    entity_id: sensor.shed_c1_fault
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.to_state.state not in [''None'', ''No comms'', ''unknown'', ''unavailable''] }}'
+  actions:
+  - action: notify.notify
+    data:
+      title: Shed compressor 1 FAULT
+      message: '{{ trigger.to_state.state }}. The other compressor takes over. Check it, then press Reset.'
+- id: shed_c1_start_limit_alert
+  alias: Shed - compressor 1 starts-per-hour limit (possible leak)
+  triggers:
+  - trigger: state
+    entity_id: sensor.shed_c1_status
+    to: Blocked (starts per hour)
+  actions:
+  - action: notify.notify
+    data:
+      title: Shed compressor 1 short-cycling
+      message: Hit the starts-per-hour limit. Likely an air leak or a drain stuck open.
+- id: shed_c1_service_reminder
+  alias: Shed - compressor 1 service every 500 h
+  triggers:
+  - trigger: template
+    value_template: '{{ (states(''sensor.shed_c1_run_hours'') | float(0) // 500) > 0 and (states(''sensor.shed_c1_run_hours'') | float(0) % 500) < 0.5 }}'
+  actions:
+  - action: notify.notify
+    data:
+      title: Shed compressor 1 service due
+      message: '{{ states(''sensor.shed_c1_run_hours'') }} run hours: oil, filter, belt check.'
+- id: shed_c2_fault_alert
+  alias: Shed - compressor 2 fault alert
+  triggers:
+  - trigger: state
+    entity_id: sensor.shed_c2_fault
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.to_state.state not in [''None'', ''No comms'', ''unknown'', ''unavailable''] }}'
+  actions:
+  - action: notify.notify
+    data:
+      title: Shed compressor 2 FAULT
+      message: '{{ trigger.to_state.state }}. The other compressor takes over. Check it, then press Reset.'
+- id: shed_c2_start_limit_alert
+  alias: Shed - compressor 2 starts-per-hour limit (possible leak)
+  triggers:
+  - trigger: state
+    entity_id: sensor.shed_c2_status
+    to: Blocked (starts per hour)
+  actions:
+  - action: notify.notify
+    data:
+      title: Shed compressor 2 short-cycling
+      message: Hit the starts-per-hour limit. Likely an air leak or a drain stuck open.
+- id: shed_c2_service_reminder
+  alias: Shed - compressor 2 service every 500 h
+  triggers:
+  - trigger: template
+    value_template: '{{ (states(''sensor.shed_c2_run_hours'') | float(0) // 500) > 0 and (states(''sensor.shed_c2_run_hours'') | float(0) % 500) < 0.5 }}'
+  actions:
+  - action: notify.notify
+    data:
+      title: Shed compressor 2 service due
+      message: '{{ states(''sensor.shed_c2_run_hours'') }} run hours: oil, filter, belt check.'
+- id: shed_pump_alert
+  alias: Shed - pump fault or low water
+  triggers:
+  - trigger: state
+    entity_id: sensor.shed_pump_status
+    to:
+    - FAULT (ran too long)
+    - Locked out (low water)
+  actions:
+  - action: notify.notify
+    data:
+      title: Shed tank / pump
+      message: 'Pump: {{ trigger.to_state.state }}. Tank {{ states(''sensor.shed_tank_level'') }} %.'
+- id: shed_tank_low_warning
+  alias: Shed - tank below 30 %
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.shed_tank_level
+    below: 30
+    for: 00:10:00
+  actions:
+  - action: notify.notify
+    data:
+      title: Tank getting low
+      message: Tank at {{ states('sensor.shed_tank_level') }} % ({{ states('sensor.shed_tank_litres') }} L).
+- id: shed_plc_offline_alert
+  alias: Shed - PLC offline
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.shed_plc_online
+    to: 'off'
+    for: 00:02:00
+  actions:
+  - action: notify.notify
+    data:
+      title: Shed PLC offline
+      message: HA can't reach the shed PLC. Compressors run on fallback rules; tank pump keeps its last setting.
+- id: shed_forces_alert
+  alias: Shed - I/O forces active
+  triggers:
+  - trigger: state
+    entity_id: sensor.shed_force_active
+    to: '1'
+  actions:
+  - action: notify.notify
+    data:
+      title: 'Shed: I/O FORCED'
+      message: Someone has forced I/O at the shed from Saturn Command. Forces clear automatically after 60 minutes.

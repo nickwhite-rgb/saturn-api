@@ -23,6 +23,7 @@ async function migrate() {
     )`);
   await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS can_add_sites BOOLEAN NOT NULL DEFAULT FALSE`);
   await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role_title TEXT`);
+  await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS can_force BOOLEAN NOT NULL DEFAULT FALSE`);
 
   // --- remove old Saturn OS purchase-history data ---------------------------
   const old = await db.query(
@@ -57,6 +58,13 @@ async function migrate() {
       updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
 
+  // I/O page + forcing (Saturn PLC standard v1, read/written through the site's Home Assistant)
+  await db.query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS io_points JSONB NOT NULL DEFAULT '[]'::jsonb`);
+  await db.query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS io_prefix TEXT`);   // HA entity prefix, e.g. 'shed'
+  await db.query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS io_hub TEXT`);      // HA modbus hub name, e.g. 'shed_plc'
+  await db.query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS io_slave INT NOT NULL DEFAULT 1`);
+  await db.query(`ALTER TABLE sites ADD COLUMN IF NOT EXISTS force_changed_at TIMESTAMPTZ`);
+
   // --- who can see / edit which site -----------------------------------------
   await db.query(`
     CREATE TABLE IF NOT EXISTS site_access (
@@ -76,6 +84,19 @@ async function migrate() {
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_site_log_site ON site_log (site_id, created_at DESC)`);
+
+  // --- active I/O forces (one row per forced point) -------------------------
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS site_forces (
+      site_id    INT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+      kind       TEXT NOT NULL,            -- DI | DQ | AI
+      channel    INT NOT NULL,
+      value      INT NOT NULL,             -- 0/1 for DI/DQ, raw counts for AI
+      eng_value  TEXT,                     -- what the person typed, e.g. '5.0 bar'
+      forced_by  INT REFERENCES users(id) ON DELETE SET NULL,
+      forced_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (site_id, kind, channel)
+    )`);
 
   console.log('[MIGRATE] Database ready');
 }
