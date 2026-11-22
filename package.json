@@ -1,7 +1,7 @@
 {
-  "name": "saturn-command",
+  "name": "saturn-command-center",
   "version": "2.0.0",
-  "description": "Saturn Command: one mobile web app to see and look after every Saturn Electrical site",
+  "description": "Saturn Command Center: one mobile web app to see and look after every Saturn Electrical site",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

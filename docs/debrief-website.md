@@ -1,4 +1,4 @@
-# Debrief: Saturn Command (website)
+# Debrief: Saturn Command Center (website)
 
 Handover for a new chat about the website only. Written 22 Nov 2026.
 
@@ -6,14 +6,14 @@ Handover for a new chat about the website only. Written 22 Nov 2026.
 
 - **Nick White**, licensed electrician, owner of **Saturn Electrical** (Warwick, QLD, 10+ staff, uses AroFlo).
 - Not a developer. Wants plain language, bullet points, multiple-choice questions, and things that make the business less reliant on him.
-- **Saturn Command** is a mobile-first, password-protected web app to oversee **all sites**: Nick's own (house, shed), the Saturn depot, and customer jobs. It has AI built in.
+- **Saturn Command Center** is a mobile-first, password-protected web app to oversee **all sites**: Nick's own (house, shed), the Saturn depot, and customer jobs. It has AI built in.
 
 ## Where the code lives
 
-- Repo: `nickwhite-rgb/saturn-api` (to be renamed `saturn-command`; Nick does that in GitHub settings).
+- Repo: `nickwhite-rgb/saturn-api` (to be renamed `saturn-command-center`; Nick does that in GitHub settings).
 - Hosting: **Railway** (Node.js + Express + Postgres). Deploys from `main`.
 - Work branch: **`ccr-d1b25b67-bdlpxj`**, **not merged to `main` yet, so not live**. Railway still runs the old Saturn OS.
-  - `0c54c39`: Saturn Command v1 (working, tested)
+  - `0c54c39`: Saturn Command Center v1 (working, tested)
   - `e9e91a4`: I/O forcing groundwork (not wired into the API/UI yet)
 - It was repurposed from **Saturn OS** (an AroFlo purchase-history tool). Lachlan built a different system (Orbit), so Saturn OS isn't needed. All AroFlo/purchase code is removed. Old tables `purchase_lines` and `sync_runs` are **dropped automatically on first start** (Nick approved). The `users` table and existing PINs are kept.
 
@@ -46,7 +46,7 @@ Handover for a new chat about the website only. Written 22 Nov 2026.
 
 ## Decisions already made
 
-- Name: **Saturn Command**.
+- Name: **Saturn Command Center**.
 - AI: **v1 = Q&A only**. **v2 = Claude drafts PLC/HA changes and sends them to GitHub for one-tap approval** (not started).
 - Users: staff log in. Each employee has a profile page with per-site view/edit ticks.
 - Master dashboard **top tabs: Overview, Alarms, Activity, Sites, Team**.
@@ -81,7 +81,7 @@ Handover for a new chat about the website only. Written 22 Nov 2026.
 
 ## How I/O and forcing works ("Saturn PLC standard v1")
 
-- Saturn Command → the site's **Home Assistant REST API** → HA `modbus.write_register` → PLC.
+- Saturn Command Center → the site's **Home Assistant REST API** → HA `modbus.write_register` → PLC.
 - Reads come from HA sensors named `sensor.<prefix>_...` (prefix e.g. `shed`).
 
 | PLC | Holding reg | HA sensor | Meaning |
@@ -115,7 +115,7 @@ DI/DQ channels are 0–15. AI is 0–3; only AI0 and AI1 can be forced. The defa
    - add `ANTHROPIC_API_KEY`
    - make sure `SESSION_SECRET` is set (never change it later: it also encrypts the HA tokens)
    - delete the old `AROFLO_*` variables
-3. Rename the GitHub repo and the Railway service to Saturn Command, and check Railway is still linked.
+3. Rename the GitHub repo and the Railway service to Saturn Command Center, and check Railway is still linked.
 4. Per site: create an HA long-lived token (a non-admin HA user is best), then enter it in Settings with the HA URL (Nabu Casa) and the entity list.
 
 ## Open points and risks

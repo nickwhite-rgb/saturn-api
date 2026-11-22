@@ -1,4 +1,4 @@
-// auth.js — Saturn Command authentication
+// auth.js — Saturn Command Center authentication
 //
 // - PINs are hashed with Node's built-in scrypt (no bcrypt dependency needed)
 // - Sessions are signed cookies (HMAC-SHA256), no DB session table needed

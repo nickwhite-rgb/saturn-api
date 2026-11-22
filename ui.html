@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0f2a44">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Saturn Command">
-<title>Saturn Command</title>
+<meta name="apple-mobile-web-app-title" content="Saturn Command Center">
+<title>Saturn Command Center</title>
 <style>
   :root {
     --bg: #f4f5f2; --card: #ffffff; --line: #e3e4de; --line-soft: #f0f1ec;
@@ -233,7 +233,7 @@ function renderLogin() {
   $root.innerHTML = `
     <div class="login"><div class="login-box">
       <div class="mark">S</div>
-      <h1>Saturn Command</h1>
+      <h1>Saturn Command Center</h1>
       <div class="muted small">Enter your 6-digit PIN</div>
       <input class="pin" id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" autofocus>
       <div class="small" id="login-err" style="color:var(--bad);min-height:20px"></div>
@@ -259,8 +259,8 @@ async function renderSites() {
   const me = state.me;
   const right = `${me.is_admin ? `<button class="icon-btn" data-go="#/team">Team</button>` : ''}
     <button class="icon-btn" id="logout">Log out</button>`;
-  if (!state.sites) loading('Saturn Command');
-  try { state.sites = await api('/api/sites'); } catch (e) { return errorView('Saturn Command', null, e); }
+  if (!state.sites) loading('Saturn Command Center');
+  try { state.sites = await api('/api/sites'); } catch (e) { return errorView('Saturn Command Center', null, e); }
 
   const counts = { all: state.sites.length, attention: 0, personal: 0, saturn: 0, customer: 0 };
   for (const s of state.sites) {
@@ -271,7 +271,7 @@ async function renderSites() {
     .map(([k, l]) => `<button class="chip ${state.filter === k ? 'on' : ''}" data-f="${k}">${l} ${counts[k] || 0}</button>`).join('');
 
   shell({
-    title: 'Saturn Command', sub: me.name, right,
+    title: 'Saturn Command Center', sub: me.name, right,
     body: `
       <input class="search" id="q" type="search" placeholder="Search sites, clients, job numbers" value="${esc(state.q)}">
       <div class="chips">${chips}</div>

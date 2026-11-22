@@ -335,7 +335,7 @@ PROGRAM shed_main
     ST_DI_EFF     AT %MW57 : WORD;  (* inputs as the logic sees them (after forces) *)
     ST_DQ_LOGIC   AT %MW58 : WORD;  (* outputs the logic wants (before forces) *)
 
-    (* ---------- I/O forcing for testing / commissioning (written by Saturn Command via HA) ----------
+    (* ---------- I/O forcing for testing / commissioning (written by Saturn Command Center via HA) ----------
        Forces auto-clear FORCE_MIN minutes after the last change, and on every PLC restart.
        Hardwired protection (pressure switches, overloads, HOA, float cut-outs) still applies. *)
     F_DI_MASK     AT %MW60 : WORD;  (* 1 = input bit forced *)

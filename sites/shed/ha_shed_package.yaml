@@ -1,7 +1,7 @@
 # =====================================================================
 # SATURN SITE CONTROLS - HOME ASSISTANT PACKAGE: SHED (house HA)
 # 2 compressors lead/lag, condensate drains, tank level, tank pump.
-# I/O forcing from Saturn Command: registers 1084-1091 (%MW60-%MW67), written via modbus.write_register.
+# I/O forcing from Saturn Command Center: registers 1084-1091 (%MW60-%MW67), written via modbus.write_register.
 # Talks to the shed OpenPLC over Modbus TCP.
 # Install: save as /config/packages/shed.yaml and make sure
 #   configuration.yaml contains:
@@ -702,4 +702,4 @@ automation:
   - action: notify.notify
     data:
       title: 'Shed: I/O FORCED'
-      message: Someone has forced I/O at the shed from Saturn Command. Forces clear automatically after 60 minutes.
+      message: Someone has forced I/O at the shed from Saturn Command Center. Forces clear automatically after 60 minutes.

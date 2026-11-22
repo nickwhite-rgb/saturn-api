@@ -1,4 +1,4 @@
-// index.js — Saturn Command
+// index.js — Saturn Command Center
 //
 // One place to see and look after every site: Nick's own sites, Saturn's
 // depot and customer jobs. Mobile-first web app, PIN login, per-employee
@@ -43,7 +43,7 @@ const UI_HTML = (() => {
     return fs.readFileSync(path.join(__dirname, 'ui.html'), 'utf8');
   } catch (err) {
     console.error('Failed to load ui.html:', err.message);
-    return '<h1>Saturn Command</h1><p>UI file missing. Visit /health to check the server.</p>';
+    return '<h1>Saturn Command Center</h1><p>UI file missing. Visit /health to check the server.</p>';
   }
 })();
 
@@ -375,7 +375,7 @@ app.post('/api/admin/users/:id/reset-pin', auth.requireAdmin, wrap(async (req, r
 app.get('/health', async (req, res) => {
   try {
     const r = await db.query('SELECT NOW() AS server_time');
-    res.json({ status: 'ok', app: 'saturn-command', database: 'connected', server_time: r.rows[0].server_time });
+    res.json({ status: 'ok', app: 'saturn-command-center', database: 'connected', server_time: r.rows[0].server_time });
   } catch (err) {
     res.status(500).json({ status: 'error', database: 'disconnected', message: err.message });
   }
@@ -386,7 +386,7 @@ app.get('/health', async (req, res) => {
 migrate()
   .then(() => auth.bootstrapAdmin())
   .then(() => {
-    app.listen(PORT, () => console.log(`Saturn Command listening on port ${PORT}`));
+    app.listen(PORT, () => console.log(`Saturn Command Center listening on port ${PORT}`));
   })
   .catch(err => {
     console.error('[STARTUP] failed:', err);

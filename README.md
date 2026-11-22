@@ -1,4 +1,4 @@
-# Saturn Command
+# Saturn Command Center
 
 One mobile web app to see and look after every Saturn Electrical site: Nick's own sites, the depot, and customer jobs.
 
@@ -26,7 +26,7 @@ The old `AROFLO_*` variables are no longer used and can be deleted.
 ## Adding live data to a site
 
 1. In the site's Home Assistant: profile → Security → create a long-lived access token. A dedicated non-admin HA user is best.
-2. In Saturn Command: site → Settings → Live data. Enter the HA address (e.g. the Nabu Casa URL), paste the token, and list the entity IDs to show, one per line.
+2. In Saturn Command Center: site → Settings → Live data. Enter the HA address (e.g. the Nabu Casa URL), paste the token, and list the entity IDs to show, one per line.
 
 ## Files
 

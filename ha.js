@@ -9,7 +9,7 @@ const crypto = require('crypto');
 function keyOrNull() {
   const secret = process.env.DATA_KEY || process.env.SESSION_SECRET;
   if (!secret) return null;
-  return crypto.createHash('sha256').update('saturn-command:' + secret).digest();
+  return crypto.createHash('sha256').update('saturn-command-center:' + secret).digest();
 }
 
 function encrypt(plain) {

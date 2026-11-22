@@ -3,7 +3,7 @@
 // "Saturn PLC standard v1": the PLC exposes its I/O and force registers as
 // Modbus holding registers, and the site's Home Assistant reads them as
 // sensors named  sensor.<prefix>_...  (see the site's HA package).
-// Saturn Command reads those sensors and forces points by calling HA's
+// Saturn Command Center reads those sensors and forces points by calling HA's
 // modbus.write_register service.
 //
 //   PLC address      Holding reg   HA sensor (prefix p)          Meaning

@@ -85,7 +85,7 @@ Handover for a new chat about the hardware only. Written 22 Nov 2026.
 - Faults: overload, fail to start, pressure not rising, transmitter fault.
 - Tank pump permissive with level hysteresis and an overrun fault.
 - If HA is lost: compressors keep running for 4 h, then stop.
-- **I/O force registers with a 60-minute auto-clear** (for the Saturn Command I/O page).
+- **I/O force registers with a 60-minute auto-clear** (for the Saturn Command Center I/O page).
 
 **Assumption to confirm:** both compressors feed **one air main with one pressure transmitter**.
 

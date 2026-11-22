@@ -1,7 +1,7 @@
-// migrate.js — Saturn Command database setup
+// migrate.js — Saturn Command Center database setup
 //
 // Runs automatically every time the app starts. Safe to re-run:
-//   - creates the Saturn Command tables if they don't exist
+//   - creates the Saturn Command Center tables if they don't exist
 //   - removes the old Saturn OS purchase-history tables (one-off, logged)
 //   - keeps the users table so existing PINs keep working
 
