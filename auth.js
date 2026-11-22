@@ -1,4 +1,4 @@
-// auth.js — Saturn OS authentication
+// auth.js — Saturn Command authentication
 //
 // - PINs are hashed with Node's built-in scrypt (no bcrypt dependency needed)
 // - Sessions are signed cookies (HMAC-SHA256), no DB session table needed
@@ -156,7 +156,7 @@ async function loadUser(req, res, next) {
   }
   try {
     const result = await db.query(
-      'SELECT id, name, email, phone, is_admin, active FROM users WHERE id = $1',
+      'SELECT id, name, email, phone, role_title, is_admin, can_add_sites, active FROM users WHERE id = $1',
       [payload.uid]
     );
     const user = result.rows[0];

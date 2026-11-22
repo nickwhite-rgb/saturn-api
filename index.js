@@ -1,86 +1,123 @@
-// index.js — Saturn OS API
-// Endpoints:
-//   GET  /health              — server + DB liveness check
-//   GET  /test-aroflo         — debug: ping AroFlo and show raw response
-//   POST /sync/run            — manually trigger a purchase-order sync (also accepts GET for easy browser test)
-//   GET  /sync/status         — last 10 sync attempts
-//   GET  /purchases           — search/sort/filter purchase line items
-//   GET  /purchases/stats     — summary tile numbers (total POs, lines, spend, suppliers)
-//   GET  /purchases/filters   — distinct supplier + category lists for dropdowns
+// index.js — Saturn Command
+//
+// One place to see and look after every site: Nick's own sites, Saturn's
+// depot and customer jobs. Mobile-first web app, PIN login, per-employee
+// site access (view / edit), live Home Assistant data and "Ask Claude".
+//
+// Endpoints (all JSON, all need a login unless noted):
+//   POST /api/login, POST /api/logout, GET /api/me
+//   GET  /api/sites                 sites this user can see
+//   POST /api/sites                 add a site (admin or "can add sites")
+//   GET  /api/sites/:id             one site (view access)
+//   PATCH /api/sites/:id            edit a site (edit access)
+//   DELETE /api/sites/:id           delete a site (admin)
+//   GET  /api/sites/:id/live        live readings from the site's Home Assistant
+//   GET  /api/sites/:id/log         site log
+//   POST /api/sites/:id/log         add a log entry (edit access)
+//   POST /api/sites/:id/ask         ask Claude about the site (view access)
+//   GET  /api/admin/users           team list (admin)
+//   POST /api/admin/users           add employee, returns PIN once (admin)
+//   GET  /api/admin/users/:id       employee profile + site access (admin)
+//   PATCH /api/admin/users/:id      update employee (admin)
+//   PUT  /api/admin/users/:id/access  set site ticks (admin)
+//   POST /api/admin/users/:id/reset-pin (admin)
+//   GET  /health                    no login
 
 const express = require('express');
-const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
 const db = require('./db');
-const sync = require('./sync');
 const auth = require('./auth');
-const { importCsv } = require('./import');
+const ha = require('./ha');
+const ai = require('./ai');
+const { migrate } = require('./migrate');
 
 const app = express();
-app.use(express.json());
-
-// All requests get req.user populated (or null if not logged in)
+app.use(express.json({ limit: '1mb' }));
 app.use(auth.loadUser);
-
-// Bootstrap the first admin from ADMIN_INITIAL_PIN env var if no users exist
-auth.bootstrapAdmin().catch(err => console.error('[AUTH] bootstrap failed:', err));
 
 const PORT = process.env.PORT || 3000;
 
-// Load the search UI HTML at startup
 const UI_HTML = (() => {
   try {
     return fs.readFileSync(path.join(__dirname, 'ui.html'), 'utf8');
   } catch (err) {
     console.error('Failed to load ui.html:', err.message);
-    return '<h1>Saturn OS</h1><p>UI file missing — visit /health to verify the API is running.</p>';
+    return '<h1>Saturn Command</h1><p>UI file missing. Visit /health to check the server.</p>';
   }
 })();
 
-// Search UI at root (UI itself handles login state via /api/me)
 app.get('/', (req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.type('html').send(UI_HTML);
 });
 
-// --- Auth endpoints ---------------------------------------------------------
+const SITE_TYPES = ['personal', 'saturn', 'customer'];
+const SITE_STATUSES = ['ok', 'attention', 'fault', 'commissioning', 'offline'];
+const SITE_TEXT_FIELDS = ['name', 'client', 'address', 'aroflo_job', 'summary', 'equipment', 'io_list', 'network', 'notes', 'ha_entities'];
 
-app.post('/api/login', async (req, res) => {
+function wrap(fn) {
+  return (req, res) => fn(req, res).catch(err => {
+    console.error('[ERROR]', req.method, req.path, err);
+    res.status(err.status || 500).json({ error: err.expose ? err.message : 'Something went wrong' });
+  });
+}
+
+function httpError(status, message) {
+  const e = new Error(message);
+  e.status = status;
+  e.expose = true;
+  return e;
+}
+
+// 'edit' | 'view' | null
+async function siteAccess(user, siteId) {
+  if (!user) return null;
+  if (user.is_admin) return 'edit';
+  const r = await db.query('SELECT can_edit FROM site_access WHERE user_id = $1 AND site_id = $2', [user.id, siteId]);
+  if (!r.rows.length) return null;
+  return r.rows[0].can_edit ? 'edit' : 'view';
+}
+
+async function loadSite(req, needed) {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) throw httpError(404, 'Site not found');
+  const access = await siteAccess(req.user, id);
+  if (!access) throw httpError(404, 'Site not found'); // don't reveal sites they can't see
+  if (needed === 'edit' && access !== 'edit') throw httpError(403, 'You have view-only access to this site');
+  const r = await db.query('SELECT * FROM sites WHERE id = $1', [id]);
+  if (!r.rows.length) throw httpError(404, 'Site not found');
+  return { site: r.rows[0], access };
+}
+
+function publicSite(site, access) {
+  const { ha_token_enc, ...rest } = site;
+  return { ...rest, has_ha_token: !!ha_token_enc, access };
+}
+
+async function addLog(siteId, userId, entry) {
+  await db.query('INSERT INTO site_log (site_id, user_id, entry) VALUES ($1, $2, $3)', [siteId, userId, entry]);
+}
+
+// --- Auth -------------------------------------------------------------------
+
+app.post('/api/login', wrap(async (req, res) => {
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
-  if (auth.rateLimited(ip)) {
-    return res.status(429).json({ error: 'Too many attempts. Try again in an hour.' });
-  }
+  if (auth.rateLimited(ip)) return res.status(429).json({ error: 'Too many attempts. Try again in an hour.' });
   const pin = String((req.body && req.body.pin) || '').trim();
-  if (!/^\d{6}$/.test(pin)) {
-    return res.status(400).json({ error: 'PIN must be 6 digits' });
+  if (!/^\d{6}$/.test(pin)) return res.status(400).json({ error: 'PIN must be 6 digits' });
+  const result = await db.query('SELECT id, name, pin_hash, is_admin FROM users WHERE active = TRUE');
+  let matched = null;
+  for (const u of result.rows) {
+    if (await auth.verifyPin(pin, u.pin_hash)) { matched = u; break; }
   }
-  try {
-    const result = await db.query(
-      `SELECT id, name, pin_hash, is_admin FROM users WHERE active = TRUE`
-    );
-    let matchedUser = null;
-    for (const u of result.rows) {
-      if (await auth.verifyPin(pin, u.pin_hash)) { matchedUser = u; break; }
-    }
-    if (!matchedUser) {
-      return res.status(401).json({ error: 'Invalid PIN' });
-    }
-    auth.clearRateLimit(ip);
-    await db.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [matchedUser.id]);
-    const token = auth.signToken({
-      uid: matchedUser.id,
-      exp: Date.now() + auth.SESSION_TTL_MS,
-    });
-    auth.setCookie(res, auth.COOKIE_NAME, token, { maxAge: auth.SESSION_TTL_MS });
-    res.json({
-      ok: true,
-      user: { id: matchedUser.id, name: matchedUser.name, is_admin: matchedUser.is_admin },
-    });
-  } catch (err) {
-    console.error('[LOGIN]', err);
-    res.status(500).json({ error: 'Login failed' });
-  }
-});
+  if (!matched) return res.status(401).json({ error: 'Invalid PIN' });
+  auth.clearRateLimit(ip);
+  await db.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [matched.id]);
+  const token = auth.signToken({ uid: matched.id, exp: Date.now() + auth.SESSION_TTL_MS });
+  auth.setCookie(res, auth.COOKIE_NAME, token, { maxAge: auth.SESSION_TTL_MS });
+  res.json({ ok: true, user: { id: matched.id, name: matched.name, is_admin: matched.is_admin } });
+}));
 
 app.post('/api/logout', (req, res) => {
   auth.clearCookie(res, auth.COOKIE_NAME);
@@ -89,369 +126,269 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/me', (req, res) => {
   if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  const u = req.user;
   res.json({
-    id: req.user.id,
-    name: req.user.name,
-    email: req.user.email,
-    phone: req.user.phone,
-    is_admin: req.user.is_admin,
+    id: u.id, name: u.name, email: u.email, phone: u.phone, role_title: u.role_title,
+    is_admin: u.is_admin, can_add_sites: u.is_admin || u.can_add_sites,
+    ai_enabled: !!process.env.ANTHROPIC_API_KEY,
   });
 });
 
-// --- Admin endpoints (require is_admin) -------------------------------------
+// --- Sites ------------------------------------------------------------------
 
-app.get('/api/admin/users', auth.requireAdmin, async (req, res) => {
-  try {
-    const result = await db.query(
-      `SELECT id, name, email, phone, is_admin, active, created_at, last_login_at
-         FROM users
-        ORDER BY active DESC, name`
-    );
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+app.get('/api/sites', auth.requireAuth, wrap(async (req, res) => {
+  const cols = `s.id, s.name, s.site_type, s.client, s.address, s.aroflo_job, s.status, s.summary, s.updated_at,
+                (s.ha_url IS NOT NULL AND s.ha_token_enc IS NOT NULL) AS has_live`;
+  let r;
+  if (req.user.is_admin) {
+    r = await db.query(`SELECT ${cols}, 'edit' AS access FROM sites s ORDER BY s.name`);
+  } else {
+    r = await db.query(
+      `SELECT ${cols}, CASE WHEN a.can_edit THEN 'edit' ELSE 'view' END AS access
+         FROM sites s JOIN site_access a ON a.site_id = s.id AND a.user_id = $1
+        ORDER BY s.name`, [req.user.id]);
   }
-});
+  res.json(r.rows);
+}));
 
-app.post('/api/admin/users', auth.requireAdmin, async (req, res) => {
-  const name = String((req.body && req.body.name) || '').trim();
-  const email = String((req.body && req.body.email) || '').trim() || null;
-  const phone = String((req.body && req.body.phone) || '').trim() || null;
-  const isAdmin = !!(req.body && req.body.is_admin);
-  if (!name) return res.status(400).json({ error: 'name is required' });
-  try {
-    const pin = auth.generatePin();
-    const pinHash = await auth.hashPin(pin);
-    const result = await db.query(
-      `INSERT INTO users (name, email, phone, pin_hash, is_admin, active)
-       VALUES ($1, $2, $3, $4, $5, TRUE)
-       RETURNING id, name, email, phone, is_admin, active, created_at`,
-      [name, email, phone, pinHash, isAdmin]
-    );
-    // Return the PIN ONCE — it's never retrievable again
-    res.json({ ok: true, user: result.rows[0], pin });
-  } catch (err) {
-    if (err.code === '23505') {
-      return res.status(409).json({ error: 'A user with that name already exists' });
-    }
-    console.error('[ADMIN/CREATE]', err);
-    res.status(500).json({ error: err.message });
+function readSiteBody(body, { creating }) {
+  const out = {};
+  for (const f of SITE_TEXT_FIELDS) {
+    if (body[f] !== undefined) out[f] = String(body[f] || '').trim() || null;
   }
-});
-
-app.post('/api/admin/users/:id/reset-pin', auth.requireAdmin, async (req, res) => {
-  try {
-    const pin = auth.generatePin();
-    const pinHash = await auth.hashPin(pin);
-    const result = await db.query(
-      `UPDATE users SET pin_hash = $1 WHERE id = $2 RETURNING id, name`,
-      [pinHash, req.params.id]
-    );
-    if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
-    res.json({ ok: true, user: result.rows[0], pin });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  if (body.site_type !== undefined) {
+    if (!SITE_TYPES.includes(body.site_type)) throw httpError(400, 'Unknown site type');
+    out.site_type = body.site_type;
   }
-});
+  if (body.status !== undefined) {
+    if (!SITE_STATUSES.includes(body.status)) throw httpError(400, 'Unknown status');
+    out.status = body.status;
+  }
+  if (body.ha_url !== undefined) {
+    try { out.ha_url = ha.cleanUrl(body.ha_url); } catch (e) { throw httpError(400, e.message); }
+  }
+  if (body.ha_token !== undefined && String(body.ha_token).trim()) {
+    try { out.ha_token_enc = ha.encrypt(String(body.ha_token).trim()); } catch (e) { throw httpError(400, e.message); }
+  }
+  if (body.clear_ha_token === true) out.ha_token_enc = null;
+  if (creating && !out.name) throw httpError(400, 'Site name is required');
+  if (out.name === null) throw httpError(400, 'Site name is required');
+  return out;
+}
 
-app.patch('/api/admin/users/:id', auth.requireAdmin, async (req, res) => {
-  const { active, is_admin } = req.body || {};
+app.post('/api/sites', auth.requireAuth, wrap(async (req, res) => {
+  if (!req.user.is_admin && !req.user.can_add_sites) throw httpError(403, "You don't have permission to add sites");
+  const data = readSiteBody(req.body || {}, { creating: true });
+  data.created_by = req.user.id;
+  const keys = Object.keys(data);
+  const r = await db.query(
+    `INSERT INTO sites (${keys.join(', ')}) VALUES (${keys.map((_, i) => '$' + (i + 1)).join(', ')}) RETURNING *`,
+    keys.map(k => data[k]));
+  const site = r.rows[0];
+  if (!req.user.is_admin) {
+    await db.query('INSERT INTO site_access (user_id, site_id, can_edit) VALUES ($1, $2, TRUE) ON CONFLICT DO NOTHING', [req.user.id, site.id]);
+  }
+  await addLog(site.id, req.user.id, 'Site created');
+  res.json(publicSite(site, 'edit'));
+}));
+
+app.get('/api/sites/:id', auth.requireAuth, wrap(async (req, res) => {
+  const { site, access } = await loadSite(req, 'view');
+  res.json(publicSite(site, access));
+}));
+
+app.patch('/api/sites/:id', auth.requireAuth, wrap(async (req, res) => {
+  const { site } = await loadSite(req, 'edit');
+  const data = readSiteBody(req.body || {}, { creating: false });
+  const keys = Object.keys(data);
+  if (!keys.length) return res.json(publicSite(site, 'edit'));
+  const sets = keys.map((k, i) => `${k} = $${i + 1}`).concat('updated_at = NOW()');
+  const r = await db.query(
+    `UPDATE sites SET ${sets.join(', ')} WHERE id = $${keys.length + 1} RETURNING *`,
+    keys.map(k => data[k]).concat(site.id));
+  const changed = keys.map(k => (k === 'ha_token_enc' ? 'Home Assistant token' : k.replace(/_/g, ' ')));
+  if (data.status && data.status !== site.status) {
+    await addLog(site.id, req.user.id, `Status changed from ${site.status} to ${data.status}`);
+  } else {
+    await addLog(site.id, req.user.id, 'Updated: ' + changed.join(', '));
+  }
+  res.json(publicSite(r.rows[0], 'edit'));
+}));
+
+app.delete('/api/sites/:id', auth.requireAdmin, wrap(async (req, res) => {
+  const r = await db.query('DELETE FROM sites WHERE id = $1 RETURNING id', [req.params.id]);
+  if (!r.rowCount) throw httpError(404, 'Site not found');
+  res.json({ ok: true });
+}));
+
+app.get('/api/sites/:id/live', auth.requireAuth, wrap(async (req, res) => {
+  const { site } = await loadSite(req, 'view');
+  res.json(await ha.fetchLive(site));
+}));
+
+async function recentLog(siteId, limit) {
+  const r = await db.query(
+    `SELECT l.id, l.entry, l.created_at, u.name AS user_name
+       FROM site_log l LEFT JOIN users u ON u.id = l.user_id
+      WHERE l.site_id = $1 ORDER BY l.created_at DESC, l.id DESC LIMIT $2`, [siteId, limit]);
+  return r.rows;
+}
+
+app.get('/api/sites/:id/log', auth.requireAuth, wrap(async (req, res) => {
+  const { site } = await loadSite(req, 'view');
+  res.json(await recentLog(site.id, 200));
+}));
+
+app.post('/api/sites/:id/log', auth.requireAuth, wrap(async (req, res) => {
+  const { site } = await loadSite(req, 'edit');
+  const entry = String((req.body && req.body.entry) || '').trim();
+  if (!entry) throw httpError(400, 'Write something first');
+  await addLog(site.id, req.user.id, entry.slice(0, 4000));
+  res.json({ ok: true });
+}));
+
+app.post('/api/sites/:id/ask', auth.requireAuth, wrap(async (req, res) => {
+  const { site } = await loadSite(req, 'view');
+  const question = String((req.body && req.body.question) || '').trim();
+  if (!question) throw httpError(400, 'Ask a question first');
+  const history = Array.isArray(req.body.history) ? req.body.history : [];
+  const [log, live] = await Promise.all([recentLog(site.id, 30), ha.fetchLive(site)]);
+  const result = await ai.askAboutSite({ site, log, live, question, history });
+  res.status(result.ok ? 200 : 503).json(result);
+}));
+
+// --- Team (admin) -----------------------------------------------------------
+
+app.get('/api/admin/users', auth.requireAdmin, wrap(async (req, res) => {
+  const r = await db.query(
+    `SELECT u.id, u.name, u.email, u.phone, u.role_title, u.is_admin, u.can_add_sites, u.active,
+            u.created_at, u.last_login_at,
+            COUNT(a.site_id)::int AS site_count,
+            COUNT(a.site_id) FILTER (WHERE a.can_edit)::int AS edit_count
+       FROM users u LEFT JOIN site_access a ON a.user_id = u.id
+      GROUP BY u.id ORDER BY u.active DESC, u.name`);
+  res.json(r.rows);
+}));
+
+app.post('/api/admin/users', auth.requireAdmin, wrap(async (req, res) => {
+  const b = req.body || {};
+  const name = String(b.name || '').trim();
+  if (!name) throw httpError(400, 'Name is required');
+  const pin = auth.generatePin();
+  const pinHash = await auth.hashPin(pin);
+  try {
+    const r = await db.query(
+      `INSERT INTO users (name, email, phone, role_title, pin_hash, is_admin, can_add_sites, active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE)
+       RETURNING id, name`,
+      [name, String(b.email || '').trim() || null, String(b.phone || '').trim() || null,
+       String(b.role_title || '').trim() || null, pinHash, !!b.is_admin, !!b.can_add_sites]);
+    res.json({ ok: true, user: r.rows[0], pin }); // PIN shown once only
+  } catch (err) {
+    if (err.code === '23505') throw httpError(409, 'Someone with that name already exists');
+    throw err;
+  }
+}));
+
+app.get('/api/admin/users/:id', auth.requireAdmin, wrap(async (req, res) => {
+  const u = await db.query(
+    `SELECT id, name, email, phone, role_title, is_admin, can_add_sites, active, created_at, last_login_at
+       FROM users WHERE id = $1`, [req.params.id]);
+  if (!u.rows.length) throw httpError(404, 'Not found');
+  const sites = await db.query(
+    `SELECT s.id, s.name, s.site_type, s.client,
+            CASE WHEN a.site_id IS NULL THEN 'none' WHEN a.can_edit THEN 'edit' ELSE 'view' END AS access
+       FROM sites s LEFT JOIN site_access a ON a.site_id = s.id AND a.user_id = $1
+      ORDER BY s.name`, [req.params.id]);
+  res.json({ user: u.rows[0], sites: sites.rows });
+}));
+
+app.patch('/api/admin/users/:id', auth.requireAdmin, wrap(async (req, res) => {
+  const b = req.body || {};
+  const id = parseInt(req.params.id, 10);
+  if (id === req.user.id && (b.active === false || b.is_admin === false)) {
+    throw httpError(400, "You can't remove your own admin rights or deactivate yourself");
+  }
   const fields = [];
   const values = [];
-  let i = 1;
-  if (typeof active === 'boolean')   { fields.push(`active = $${i}`);   values.push(active);   i++; }
-  if (typeof is_admin === 'boolean') { fields.push(`is_admin = $${i}`); values.push(is_admin); i++; }
-  if (fields.length === 0) return res.status(400).json({ error: 'Nothing to update' });
-  values.push(req.params.id);
-  try {
-    const result = await db.query(
-      `UPDATE users SET ${fields.join(', ')} WHERE id = $${i} RETURNING id, name, is_admin, active`,
-      values
-    );
-    if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
-    // Don't let the admin deactivate themselves
-    if (req.user.id === result.rows[0].id && result.rows[0].active === false) {
-      // revert
-      await db.query(`UPDATE users SET active = TRUE WHERE id = $1`, [result.rows[0].id]);
-      return res.status(400).json({ error: "You can't deactivate your own account" });
-    }
-    res.json({ ok: true, user: result.rows[0] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  for (const k of ['active', 'is_admin', 'can_add_sites']) {
+    if (typeof b[k] === 'boolean') { values.push(b[k]); fields.push(`${k} = $${values.length}`); }
   }
-});
+  for (const k of ['name', 'email', 'phone', 'role_title']) {
+    if (b[k] !== undefined) {
+      const v = String(b[k] || '').trim() || null;
+      if (k === 'name' && !v) throw httpError(400, 'Name is required');
+      values.push(v); fields.push(`${k} = $${values.length}`);
+    }
+  }
+  if (!fields.length) throw httpError(400, 'Nothing to update');
+  values.push(id);
+  try {
+    const r = await db.query(`UPDATE users SET ${fields.join(', ')} WHERE id = $${values.length} RETURNING id`, values);
+    if (!r.rowCount) throw httpError(404, 'Not found');
+  } catch (err) {
+    if (err.code === '23505') throw httpError(409, 'Someone with that name already exists');
+    throw err;
+  }
+  res.json({ ok: true });
+}));
 
-// --- Health -----------------------------------------------------------------
+// body: { access: [{ site_id, level: 'none' | 'view' | 'edit' }] }
+app.put('/api/admin/users/:id/access', auth.requireAdmin, wrap(async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const list = Array.isArray(req.body && req.body.access) ? req.body.access : null;
+  if (!list) throw httpError(400, 'access list required');
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const item of list) {
+      const siteId = parseInt(item.site_id, 10);
+      if (!Number.isInteger(siteId)) continue;
+      if (item.level === 'view' || item.level === 'edit') {
+        await client.query(
+          `INSERT INTO site_access (user_id, site_id, can_edit) VALUES ($1, $2, $3)
+           ON CONFLICT (user_id, site_id) DO UPDATE SET can_edit = EXCLUDED.can_edit`,
+          [userId, siteId, item.level === 'edit']);
+      } else {
+        await client.query('DELETE FROM site_access WHERE user_id = $1 AND site_id = $2', [userId, siteId]);
+      }
+    }
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+  res.json({ ok: true });
+}));
+
+app.post('/api/admin/users/:id/reset-pin', auth.requireAdmin, wrap(async (req, res) => {
+  const pin = auth.generatePin();
+  const r = await db.query('UPDATE users SET pin_hash = $1 WHERE id = $2 RETURNING id, name', [await auth.hashPin(pin), req.params.id]);
+  if (!r.rowCount) throw httpError(404, 'Not found');
+  res.json({ ok: true, user: r.rows[0], pin });
+}));
+
+// --- Health -------------------------------------------------------------------
+
 app.get('/health', async (req, res) => {
   try {
-    const result = await db.query('SELECT NOW() AS server_time');
-    res.json({ status: 'ok', database: 'connected', server_time: result.rows[0].server_time });
+    const r = await db.query('SELECT NOW() AS server_time');
+    res.json({ status: 'ok', app: 'saturn-command', database: 'connected', server_time: r.rows[0].server_time });
   } catch (err) {
     res.status(500).json({ status: 'error', database: 'disconnected', message: err.message });
   }
 });
 
-// --- AroFlo debug ping ------------------------------------------------------
-// Useful for sanity-checking endpoints, joins, etc. Not used in production paths.
-app.get('/test-aroflo', auth.requireAdmin, async (req, res) => {
-  const u = process.env.AROFLO_U_ENCODED;
-  const p = process.env.AROFLO_P_ENCODED;
-  const org = process.env.AROFLO_ORG_ENCODED;
-  if (!u || !p || !org) {
-    return res.status(500).json({ error: 'AroFlo credentials not set in env' });
-  }
+// --- Start --------------------------------------------------------------------
 
-  const zone = req.query.zone || 'purchaseorders';
-  const page = req.query.page || '1';
-  const join = req.query.join || 'lineitems';
-
-  const params = new URLSearchParams();
-  params.append('zone', zone);
-  params.append('page', page);
-  if (join) params.append('join', join);
-  params.append('uencoded', u);
-  params.append('pencoded', p);
-  params.append('orgencoded', org);
-
-  const url = `https://api.aroflo.com/?${params.toString()}`;
-  try {
-    const response = await fetch(url, { method: 'GET' });
-    const text = await response.text();
-    res.json({
-      status: response.status,
-      contentType: response.headers.get('content-type') || '',
-      url: `https://api.aroflo.com/?zone=${zone}&page=${page}&join=${join}&uencoded=***&pencoded=***&orgencoded=***`,
-      bodyPreview: text.slice(0, 4000),
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- Sync trigger -----------------------------------------------------------
-async function handleSyncRun(req, res) {
-  try {
-    const result = await sync.syncPurchaseOrders({ trigger: 'manual' });
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
-// Accept both POST (proper) and GET (easy browser test)
-app.post('/sync/run', auth.requireAdmin, handleSyncRun);
-app.get('/sync/run', auth.requireAdmin, handleSyncRun);
-
-app.get('/sync/status', auth.requireAuth, async (req, res) => {
-  try {
-    const result = await db.query(
-      `SELECT id, started_at, finished_at, status, trigger,
-              purchase_orders, lines_inserted, lines_updated, duration_ms, error
-         FROM sync_runs
-        ORDER BY id DESC
-        LIMIT 10`
-    );
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- Purchases: search / sort / filter / paginate ---------------------------
-app.get('/purchases', auth.requireAuth, async (req, res) => {
-  const {
-    search = '',
-    supplier = '',
-    category = '',
-    from = '',
-    to = '',
-    sort = 'date_invoiced',
-    direction = 'desc',
-    page = '1',
-    limit = '50',
-  } = req.query;
-
-  const allowedSorts = [
-    'date_invoiced', 'po_number', 'supplier_invoice_no', 'supplier',
-    'part_no', 'description', 'category', 'qty', 'unit_price', 'line_total',
-  ];
-  const sortCol = allowedSorts.includes(sort) ? sort : 'date_invoiced';
-  const dir = String(direction).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-
-  const conditions = [];
-  const params = [];
-  let i = 1;
-
-  if (search) {
-    conditions.push(
-      `(description ILIKE $${i} OR part_no ILIKE $${i} OR po_number ILIKE $${i} OR supplier_invoice_no ILIKE $${i})`
-    );
-    params.push(`%${search}%`);
-    i++;
-  }
-  if (supplier) { conditions.push(`supplier = $${i}`);  params.push(supplier);  i++; }
-  if (category) { conditions.push(`category = $${i}`);  params.push(category);  i++; }
-  if (from)     { conditions.push(`date_invoiced >= $${i}`); params.push(from); i++; }
-  if (to)       { conditions.push(`date_invoiced <= $${i}`); params.push(to);   i++; }
-
-  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
-  const lim = Math.min(500, Math.max(1, parseInt(limit, 10) || 50));
-  const pg = Math.max(1, parseInt(page, 10) || 1);
-  const offset = (pg - 1) * lim;
-
-  try {
-    const dataQuery = `
-      SELECT line_id, date_invoiced, po_number, supplier_invoice_no, supplier,
-             part_no, description, category, qty, unit_price, line_total
-        FROM purchase_lines
-        ${where}
-        ORDER BY ${sortCol} ${dir} NULLS LAST
-        LIMIT ${lim} OFFSET ${offset}
-    `;
-    const countQuery = `SELECT COUNT(*) AS n FROM purchase_lines ${where}`;
-    const [data, count] = await Promise.all([
-      db.query(dataQuery, params),
-      db.query(countQuery, params),
-    ]);
-    res.json({
-      total: parseInt(count.rows[0].n, 10),
-      page: pg,
-      limit: lim,
-      sort: sortCol,
-      direction: dir,
-      results: data.rows,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- Purchases: summary tiles -----------------------------------------------
-app.get('/purchases/stats', auth.requireAuth, async (req, res) => {
-  try {
-    const [pos, lines, spend, suppliers, lastSync] = await Promise.all([
-      db.query(`SELECT COUNT(DISTINCT po_number) AS n FROM purchase_lines WHERE po_number IS NOT NULL`),
-      db.query(`SELECT COUNT(*) AS n FROM purchase_lines`),
-      db.query(`SELECT COALESCE(SUM(line_total), 0) AS n FROM purchase_lines`),
-      db.query(`SELECT COUNT(DISTINCT supplier) AS n FROM purchase_lines WHERE supplier IS NOT NULL`),
-      db.query(`SELECT finished_at FROM sync_runs WHERE status='ok' ORDER BY id DESC LIMIT 1`),
-    ]);
-    res.json({
-      purchase_orders: parseInt(pos.rows[0].n, 10),
-      line_items: parseInt(lines.rows[0].n, 10),
-      total_spend: parseFloat(spend.rows[0].n),
-      suppliers: parseInt(suppliers.rows[0].n, 10),
-      last_synced_at: lastSync.rows[0] ? lastSync.rows[0].finished_at : null,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- Filter dropdown options ------------------------------------------------
-app.get('/purchases/filters', auth.requireAuth, async (req, res) => {
-  try {
-    const [suppliers, categories] = await Promise.all([
-      db.query(`SELECT DISTINCT supplier FROM purchase_lines WHERE supplier IS NOT NULL ORDER BY supplier`),
-      db.query(`SELECT DISTINCT category FROM purchase_lines WHERE category IS NOT NULL ORDER BY category`),
-    ]);
-    res.json({
-      suppliers: suppliers.rows.map(r => r.supplier),
-      categories: categories.rows.map(r => r.category),
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- CSV bulk import --------------------------------------------------------
-// Drag-and-drop browser page at /import — POSTs the CSV body to /import/csv.
-
-app.get('/import', auth.requireAdmin, (req, res) => {
-  res.type('html').send(`<!doctype html>
-<html><head><meta charset="utf-8"><title>Saturn OS — CSV Import</title>
-<style>
-  body { font-family: -apple-system, system-ui, Segoe UI, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; color: #111; }
-  h1 { font-size: 22px; font-weight: 500; margin: 0 0 8px; }
-  p.muted { color: #555; margin: 0 0 24px; font-size: 14px; }
-  .drop { border: 1.5px dashed #bbb; border-radius: 12px; padding: 40px 20px; text-align: center; background: #fafafa; }
-  .drop.over { background: #eef5ff; border-color: #378add; }
-  input[type=file] { margin: 16px 0; }
-  button { padding: 10px 20px; background: #111; color: #fff; border: 0; border-radius: 6px; font-size: 14px; cursor: pointer; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-  pre { background: #f4f4f4; padding: 16px; border-radius: 6px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
-  .warn { color: #985e00; }
-  .ok { color: #0c8a3a; }
-  .err { color: #c1272d; }
-</style></head><body>
-<h1>Import purchase orders</h1>
-<p class="muted">Drop your AroFlo CSV export here. Same file can be imported again — duplicates upsert cleanly.</p>
-<div class="drop" id="drop">
-  <div>Drop a .csv file here, or</div>
-  <input type="file" id="csv" accept=".csv,text/csv" />
-  <div><button id="upload" disabled>Upload</button></div>
-  <div id="filename" class="muted" style="margin-top: 12px;"></div>
-</div>
-<pre id="result" style="display:none"></pre>
-<script>
-  const drop = document.getElementById('drop');
-  const fileIn = document.getElementById('csv');
-  const btn = document.getElementById('upload');
-  const fname = document.getElementById('filename');
-  const out = document.getElementById('result');
-  let file = null;
-  function setFile(f) { file = f; fname.textContent = f ? f.name + ' (' + (f.size/1024).toFixed(1) + ' KB)' : ''; btn.disabled = !f; }
-  fileIn.addEventListener('change', () => setFile(fileIn.files[0]));
-  ['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
-  ['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
-  drop.addEventListener('drop', ev => { ev.preventDefault(); if (ev.dataTransfer.files[0]) setFile(ev.dataTransfer.files[0]); });
-  btn.addEventListener('click', async () => {
-    if (!file) return;
-    btn.disabled = true; out.style.display = 'block'; out.textContent = 'Reading file...';
-    const text = await file.text();
-    out.textContent = 'Uploading and importing... (this can take a few minutes for large files)';
-    try {
-      const res = await fetch('/import/csv', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: text });
-      const json = await res.json();
-      out.textContent = JSON.stringify(json, null, 2);
-      if (json.ok) out.classList.add('ok');
-      else out.classList.add('err');
-    } catch (err) {
-      out.textContent = 'Error: ' + err.message;
-      out.classList.add('err');
-    }
-    btn.disabled = false;
+migrate()
+  .then(() => auth.bootstrapAdmin())
+  .then(() => {
+    app.listen(PORT, () => console.log(`Saturn Command listening on port ${PORT}`));
+  })
+  .catch(err => {
+    console.error('[STARTUP] failed:', err);
+    process.exit(1);
   });
-</script>
-</body></html>`);
-});
-
-app.post('/import/csv', auth.requireAdmin, express.text({ type: '*/*', limit: '200mb' }), async (req, res) => {
-  const csv = req.body;
-  if (!csv || typeof csv !== 'string' || csv.length === 0) {
-    return res.status(400).json({ error: 'No CSV body received. POST text/csv content.' });
-  }
-  try {
-    const result = await importCsv(csv);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- Cron: 2am Brisbane, weekdays only (Mon-Fri) ----------------------------
-// Cron format:  minute  hour  day-of-month  month  day-of-week
-//               0       2     *             *      1-5         = 2:00 AM Mon-Fri
-if (process.env.ENABLE_CRON !== 'false') {
-  cron.schedule('0 2 * * 1-5', () => {
-    console.log('[CRON] 2:00 AM Brisbane weekday sync starting');
-    sync.syncPurchaseOrders({ trigger: 'cron' })
-      .then(r => console.log('[CRON] sync done', r))
-      .catch(err => console.error('[CRON] sync failed:', err));
-  }, { timezone: 'Australia/Brisbane' });
-
-  console.log('[CRON] scheduled for 02:00 Mon-Fri Australia/Brisbane');
-}
-
-app.listen(PORT, () => {
-  console.log(`Saturn OS API listening on port ${PORT}`);
-});

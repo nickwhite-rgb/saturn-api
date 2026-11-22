@@ -2,581 +2,712 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Saturn OS — Purchase History</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f2a44">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Saturn Command">
+<title>Saturn Command</title>
 <style>
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f7f5; color: #111; margin: 0; }
-  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
-
-  .topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #e5e3da; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .brand-mark { width: 32px; height: 32px; border-radius: 50%; background: #185FA5; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
-  .brand-mark.large { width: 56px; height: 56px; font-size: 22px; }
-  .brand-text { font-size: 16px; font-weight: 500; }
-  .crumb { color: #888; font-weight: 400; margin-left: 4px; }
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-  .sync-status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; }
-  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #1D9E75; }
-  .user-chip { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #444; padding: 6px 10px; background: #f1efe8; border-radius: 6px; }
-  .user-chip .role { font-size: 11px; padding: 1px 6px; background: #185FA5; color: white; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-  .btn { padding: 8px 14px; background: #fff; border: 1px solid #d3d1c7; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; }
-  .btn:hover:not(:disabled) { background: #f1efe8; }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-primary { background: #111; color: white; border-color: #111; }
-  .btn-primary:hover:not(:disabled) { background: #333; }
-  .btn-danger { color: #c1272d; border-color: #f7c1c1; }
-
-  .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
-  .search-row input { flex: 1; padding: 10px 14px; font-size: 14px; border: 1px solid #d3d1c7; border-radius: 6px; background: white; font-family: inherit; }
-  .search-row input:focus { outline: 2px solid #185FA5; outline-offset: -2px; }
-
-  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
-  .filter-row select { padding: 8px 12px; font-size: 13px; border: 1px solid #d3d1c7; border-radius: 6px; background: white; min-width: 160px; cursor: pointer; font-family: inherit; }
-  .clear-btn { margin-left: auto; }
-
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-  .stat { background: white; border: 1px solid #e5e3da; border-radius: 8px; padding: 14px 16px; }
-  .stat-label { font-size: 11px; color: #666; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .stat-value { font-size: 22px; font-weight: 500; margin: 0; font-variant-numeric: tabular-nums; }
-
-  .table-wrap { background: white; border: 1px solid #e5e3da; border-radius: 8px; overflow: hidden; }
-  .table-scroll { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 12px 14px; background: #faf9f5; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; border-bottom: 1px solid #e5e3da; white-space: nowrap; cursor: pointer; user-select: none; }
-  th:hover { background: #f1efe8; color: #111; }
-  th.active { color: #185FA5; }
-  th .arrow { display: inline-block; margin-left: 4px; font-size: 9px; opacity: 0.4; }
-  th.active .arrow { opacity: 1; }
-  td { padding: 11px 14px; border-bottom: 1px solid #f4f3ee; white-space: nowrap; }
-  tr:last-child td { border-bottom: none; }
-  tbody tr:hover { background: #faf9f5; }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; background: #E6F1FB; color: #0C447C; }
-  .desc-cell { max-width: 320px; white-space: normal; }
-
-  .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 0 4px; font-size: 13px; color: #666; }
-  .page-buttons { display: flex; gap: 6px; align-items: center; }
-  .loading, .empty { text-align: center; padding: 60px 20px; color: #888; font-size: 13px; }
-
-  /* Login overlay */
-  .login-overlay { position: fixed; inset: 0; background: #f7f7f5; display: flex; align-items: center; justify-content: center; z-index: 100; }
-  .login-box { background: white; border: 1px solid #e5e3da; border-radius: 12px; padding: 40px 36px; text-align: center; max-width: 360px; width: 90%; }
-  .login-box h1 { margin: 18px 0 4px; font-size: 22px; font-weight: 500; }
-  .login-box p { margin: 0 0 24px; color: #666; font-size: 14px; }
-  .pin-input { display: flex; justify-content: center; margin-bottom: 16px; }
-  .pin-input input { font-size: 28px; letter-spacing: 0.5em; padding: 14px; text-align: center; border: 1px solid #d3d1c7; border-radius: 8px; width: 220px; font-family: inherit; font-variant-numeric: tabular-nums; }
-  .pin-input input:focus { outline: 2px solid #185FA5; outline-offset: -2px; }
-  .login-error { color: #c1272d; font-size: 13px; min-height: 18px; }
-
-  /* Modal */
-  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 90; padding: 20px; }
-  .modal { background: white; border-radius: 12px; padding: 24px; width: 100%; max-width: 720px; max-height: 90vh; overflow-y: auto; }
-  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-  .modal-header h2 { margin: 0; font-size: 18px; font-weight: 500; }
-  .modal-close { background: none; border: 0; font-size: 22px; color: #888; cursor: pointer; padding: 0 4px; }
-
-  .user-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
-  .user-table th, .user-table td { padding: 8px 10px; border-bottom: 1px solid #f4f3ee; text-align: left; }
-  .user-table th { background: #faf9f5; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
-  .user-table .inactive { opacity: 0.5; }
-  .user-table .actions { display: flex; gap: 4px; }
-  .user-table .actions .btn { padding: 4px 10px; font-size: 12px; }
-
-  .add-user-form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; padding: 16px; background: #faf9f5; border-radius: 8px; margin-bottom: 16px; align-items: end; }
-  .add-user-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #666; }
-  .add-user-form input { padding: 8px 10px; font-size: 13px; border: 1px solid #d3d1c7; border-radius: 6px; font-family: inherit; }
-  .add-user-form .checkbox-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
-
-  .pin-reveal { padding: 16px; background: #FAEEDA; border: 1px solid #BA7517; border-radius: 8px; margin-bottom: 16px; }
-  .pin-reveal-label { font-size: 12px; color: #633806; margin-bottom: 4px; }
-  .pin-reveal-pin { font-size: 32px; font-weight: 500; letter-spacing: 0.4em; color: #412402; font-variant-numeric: tabular-nums; }
-  .pin-reveal-warn { font-size: 12px; color: #633806; margin-top: 6px; }
-
-  @media (max-width: 700px) {
-    .container { padding: 16px; }
-    .stats { grid-template-columns: repeat(2, 1fr); }
-    .filter-row select { min-width: 0; flex: 1; }
-    .clear-btn { margin-left: 0; }
-    .add-user-form { grid-template-columns: 1fr; }
+  :root {
+    --bg: #f4f5f2; --card: #ffffff; --line: #e3e4de; --line-soft: #f0f1ec;
+    --ink: #15181c; --ink-2: #555b63; --ink-3: #8a9099;
+    --brand: #0f2a44; --accent: #1c6fd1; --accent-soft: #e6f0fb;
+    --ok: #1d8f5a; --ok-soft: #e3f4ea; --warn: #b7700f; --warn-soft: #fbf0dc;
+    --bad: #c1272d; --bad-soft: #fbe7e7; --info: #5b4bc4; --info-soft: #eeebfb;
+    --muted-soft: #eceee9;
+    --radius: 12px;
   }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  a { color: var(--accent); }
+
+  /* top bar */
+  .topbar { position: sticky; top: 0; z-index: 20; background: var(--brand); color: #fff; padding: calc(env(safe-area-inset-top) + 10px) 16px 10px; display: flex; align-items: center; gap: 10px; }
+  .topbar .back { background: none; border: 0; color: #fff; font-size: 22px; padding: 4px 8px 4px 0; cursor: pointer; line-height: 1; }
+  .topbar .title { flex: 1; min-width: 0; }
+  .topbar .title h1 { margin: 0; font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar .title .sub { font-size: 12px; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mark { width: 30px; height: 30px; border-radius: 50%; background: #fff; color: var(--brand); display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; }
+  .topbar .icon-btn { background: rgba(255,255,255,.12); border: 0; color: #fff; border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; }
+
+  main { max-width: 900px; margin: 0 auto; padding: 14px 14px calc(env(safe-area-inset-bottom) + 40px); }
+
+  /* generic */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+  .card h2 { margin: 0 0 10px; font-size: 15px; font-weight: 600; }
+  .muted { color: var(--ink-2); }
+  .small { font-size: 13px; }
+  .tiny { font-size: 12px; color: var(--ink-3); }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .spacer { flex: 1; }
+  .btn { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 14px; font-weight: 500; cursor: pointer; min-height: 44px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-danger { color: var(--bad); border-color: #f2c4c4; }
+  .btn-block { width: 100%; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .p-ok { background: var(--ok-soft); color: var(--ok); }
+  .p-attention { background: var(--warn-soft); color: var(--warn); }
+  .p-fault { background: var(--bad-soft); color: var(--bad); }
+  .p-commissioning { background: var(--info-soft); color: var(--info); }
+  .p-offline { background: var(--muted-soft); color: var(--ink-2); }
+  .p-type { background: var(--accent-soft); color: var(--accent); }
+  .p-view { background: var(--muted-soft); color: var(--ink-2); }
+  .p-edit { background: var(--ok-soft); color: var(--ok); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .d-ok { background: var(--ok); } .d-attention { background: var(--warn); } .d-fault { background: var(--bad); }
+  .d-commissioning { background: var(--info); } .d-offline { background: var(--ink-3); }
+  .empty { text-align: center; color: var(--ink-3); padding: 40px 16px; }
+  .error-box { background: var(--bad-soft); color: var(--bad); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
+  .note-box { background: var(--warn-soft); color: #6b4308; border-radius: 10px; padding: 10px 12px; font-size: 14px; margin-bottom: 12px; }
+  pre.block { white-space: pre-wrap; word-break: break-word; font: inherit; margin: 0; }
+
+  /* forms */
+  label.f { display: block; margin-bottom: 12px; }
+  label.f > span { display: block; font-size: 13px; color: var(--ink-2); margin-bottom: 4px; }
+  input.i, select.i, textarea.i { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; min-height: 44px; }
+  textarea.i { min-height: 110px; resize: vertical; }
+  input.i:focus, select.i:focus, textarea.i:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .check { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line-soft); }
+  .check:last-child { border-bottom: 0; }
+  .check input { width: 22px; height: 22px; accent-color: var(--accent); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* login */
+  .login { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--brand); }
+  .login-box { background: #fff; border-radius: 16px; padding: 32px 24px; width: 100%; max-width: 360px; text-align: center; }
+  .login-box .mark { width: 56px; height: 56px; font-size: 24px; margin: 0 auto 12px; background: var(--brand); color: #fff; }
+  .login-box h1 { margin: 0 0 4px; font-size: 22px; }
+  .pin { font-size: 30px; letter-spacing: .5em; text-align: center; width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 12px; margin: 18px 0 8px; }
+
+  /* site list */
+  .search { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: #fff; min-height: 46px; margin-bottom: 10px; }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 8px; }
+  .chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; white-space: nowrap; cursor: pointer; }
+  .chip.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .site-item { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 8px; cursor: pointer; text-decoration: none; color: inherit; }
+  .site-item:active { background: #fafaf7; }
+  .site-item .main { flex: 1; min-width: 0; }
+  .site-item .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .site-item .meta { font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chev { color: var(--ink-3); font-size: 20px; }
+  .fab { position: fixed; right: 18px; bottom: calc(env(safe-area-inset-bottom) + 18px); background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 14px 20px; font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,.18); cursor: pointer; z-index: 15; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 4px; overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 12px; position: sticky; top: calc(env(safe-area-inset-top) + 56px); z-index: 10; }
+  .tab { border: 0; background: none; border-radius: 9px; padding: 9px 11px; flex: none; font-size: 14px; white-space: nowrap; cursor: pointer; color: var(--ink-2); }
+  .tab.on { background: var(--brand); color: #fff; }
+
+  /* key/value */
+  .kv { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; font-size: 14px; }
+  .kv dt { color: var(--ink-2); }
+  .kv dd { margin: 0; word-break: break-word; }
+
+  /* live tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .tile { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .tile .n { font-size: 12px; color: var(--ink-2); line-height: 1.3; min-height: 2.6em; }
+  .tile .v { font-size: 22px; font-weight: 600; margin-top: 4px; word-break: break-word; }
+  .tile .u { font-size: 13px; font-weight: 400; color: var(--ink-2); }
+  .tile .t { font-size: 11px; color: var(--ink-3); margin-top: 4px; }
+
+  /* log */
+  .log-item { padding: 10px 0; border-bottom: 1px solid var(--line-soft); }
+  .log-item:last-child { border-bottom: 0; }
+  .log-item .who { font-size: 12px; color: var(--ink-3); }
+
+  /* chat */
+  .chat { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .msg { max-width: 88%; padding: 10px 12px; border-radius: 14px; font-size: 15px; word-break: break-word; }
+  .msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.assistant { align-self: flex-start; background: #fff; border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .msg.assistant p { margin: 0 0 8px; } .msg.assistant p:last-child { margin-bottom: 0; }
+  .msg.assistant ul, .msg.assistant ol { margin: 4px 0 8px; padding-left: 20px; }
+  .msg.err { align-self: flex-start; background: var(--bad-soft); color: var(--bad); }
+  .ask-bar { position: sticky; bottom: 0; background: var(--bg); padding: 8px 0 calc(env(safe-area-inset-bottom) + 8px); display: flex; gap: 8px; }
+  .ask-bar textarea { flex: 1; min-height: 46px; max-height: 160px; border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; resize: none; }
+  .suggest { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+
+  /* access table */
+  .acc { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line-soft); }
+  .acc:last-child { border-bottom: 0; }
+  .acc .nm { flex: 1; min-width: 0; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex: none; }
+  .seg button { border: 0; background: #fff; padding: 8px 11px; font-size: 13px; cursor: pointer; min-width: 52px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on-none { background: var(--muted-soft); font-weight: 600; }
+  .seg button.on-view { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .seg button.on-edit { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+
+  .pin-reveal { background: var(--warn-soft); border: 1px solid #e2b66a; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .pin-reveal .big { font-size: 30px; font-weight: 700; letter-spacing: .3em; font-variant-numeric: tabular-nums; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 84px); transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 50; max-width: 90vw; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -3px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-
-<!-- Login overlay (shown when not authenticated) -->
-<div class="login-overlay" id="login-overlay" style="display:none">
-  <div class="login-box">
-    <div class="brand-mark large" style="margin: 0 auto;">S</div>
-    <h1>Saturn OS</h1>
-    <p>Enter your 6-digit PIN</p>
-    <div class="pin-input">
-      <input type="password" inputmode="numeric" maxlength="6" pattern="[0-9]*" id="pin-field" autocomplete="off" />
-    </div>
-    <div class="login-error" id="login-error"></div>
-  </div>
-</div>
-
-<!-- Main app (shown when authenticated) -->
-<div class="container" id="app" style="display:none">
-
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">S</div>
-      <div><span class="brand-text">Saturn OS</span><span class="crumb">/ Purchase history</span></div>
-    </div>
-    <div class="topbar-right">
-      <div class="sync-status"><div class="sync-dot"></div><span id="sync-text">Loading…</span></div>
-      <button class="btn" id="sync-btn">Sync now</button>
-      <button class="btn" id="admin-btn" style="display:none">Admin</button>
-      <div class="user-chip" id="user-chip"></div>
-      <button class="btn" id="logout-btn">Log out</button>
-    </div>
-  </div>
-
-  <div class="search-row">
-    <input type="text" id="search" placeholder="Search part no, description, PO number, supplier invoice…" />
-  </div>
-
-  <div class="filter-row">
-    <select id="supplier"><option value="">All suppliers</option></select>
-    <select id="category"><option value="">All categories</option></select>
-    <select id="date-range">
-      <option value="">All time</option>
-      <option value="7">Last 7 days</option>
-      <option value="30">Last 30 days</option>
-      <option value="90">Last 90 days</option>
-      <option value="365">Last 12 months</option>
-      <option value="fy">This financial year</option>
-    </select>
-    <button class="btn clear-btn" id="clear-btn">Clear filters</button>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><p class="stat-label">Purchase orders</p><p class="stat-value" id="stat-pos">—</p></div>
-    <div class="stat"><p class="stat-label">Line items</p><p class="stat-value" id="stat-lines">—</p></div>
-    <div class="stat"><p class="stat-label">Total spend</p><p class="stat-value" id="stat-spend">—</p></div>
-    <div class="stat"><p class="stat-label">Suppliers</p><p class="stat-value" id="stat-suppliers">—</p></div>
-  </div>
-
-  <div class="table-wrap">
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th data-col="date_invoiced" class="active">Date<span class="arrow">▼</span></th>
-            <th data-col="po_number">PO #<span class="arrow">▼</span></th>
-            <th data-col="supplier_invoice_no">Inv #<span class="arrow">▼</span></th>
-            <th data-col="supplier">Supplier<span class="arrow">▼</span></th>
-            <th data-col="part_no">Part no<span class="arrow">▼</span></th>
-            <th data-col="description">Description<span class="arrow">▼</span></th>
-            <th data-col="category">Category<span class="arrow">▼</span></th>
-            <th class="num" data-col="qty">Qty<span class="arrow">▼</span></th>
-            <th class="num" data-col="unit_price">Unit $<span class="arrow">▼</span></th>
-            <th class="num" data-col="line_total">Line total<span class="arrow">▼</span></th>
-          </tr>
-        </thead>
-        <tbody id="results-tbody">
-          <tr><td colspan="10" class="loading">Loading…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="pagination">
-    <span id="pagination-info">—</span>
-    <div class="page-buttons">
-      <button class="btn" id="prev-btn" disabled>Prev</button>
-      <button class="btn" id="next-btn" disabled>Next</button>
-    </div>
-  </div>
-
-</div>
-
-<!-- Admin panel modal -->
-<div class="modal-bg" id="admin-modal" style="display:none">
-  <div class="modal">
-    <div class="modal-header">
-      <h2>User management</h2>
-      <button class="modal-close" id="admin-close">×</button>
-    </div>
-
-    <div id="pin-reveal-box" style="display:none"></div>
-
-    <h3 style="font-size:14px; font-weight:500; margin: 0 0 8px;">Add user</h3>
-    <div class="add-user-form" id="add-user-form">
-      <label>Name<input id="new-user-name" placeholder="e.g. Jack Beveridge" /></label>
-      <label>Email (optional)<input id="new-user-email" type="email" placeholder="jack@…" /></label>
-      <label>Phone (optional)<input id="new-user-phone" placeholder="04…" /></label>
-      <button class="btn btn-primary" id="create-user-btn">Create &amp; generate PIN</button>
-      <div class="checkbox-row">
-        <input type="checkbox" id="new-user-admin" /><label for="new-user-admin" style="margin:0; flex-direction:row;">Make admin</label>
-      </div>
-    </div>
-
-    <h3 style="font-size:14px; font-weight:500; margin: 16px 0 8px;">All users</h3>
-    <table class="user-table" id="user-table">
-      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Last login</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody id="user-tbody"><tr><td colspan="7" style="text-align:center; padding:20px; color:#888;">Loading…</td></tr></tbody>
-    </table>
-  </div>
-</div>
+<div id="root"></div>
 
 <script>
-const state = {
-  search: '', supplier: '', category: '', dateRange: '',
-  sort: 'date_invoiced', direction: 'desc', page: 1, limit: 50,
-  user: null,
-};
+'use strict';
 
-const $ = id => document.getElementById(id);
-const fmt = v => v == null ? '' : String(v);
-const fmt2 = v => v == null ? '' : Number(v).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtQty = v => v == null ? '' : Number(v).toLocaleString('en-AU', { maximumFractionDigits: 2 });
-const fmtMoney = v => v == null ? '$0' : '$' + Number(v).toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-const fmtDate = v => {
-  if (!v) return '';
-  const d = new Date(v);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit' });
-};
-const fmtRelative = v => {
-  if (!v) return 'never';
-  const ms = Date.now() - new Date(v).getTime();
-  const min = Math.floor(ms / 60000);
-  if (min < 1) return 'just now';
-  if (min < 60) return min + ' min ago';
-  const hrs = Math.floor(min / 60);
-  if (hrs < 24) return hrs + 'h ago';
-  return Math.floor(hrs / 24) + 'd ago';
-};
-function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// ---------------------------------------------------------------- helpers
+const $root = document.getElementById('root');
+const state = { me: null, sites: null, filter: 'all', q: '', chats: {} };
 
-// ---- auth flow ----
-async function checkAuth() {
-  try {
-    const r = await fetch('/api/me');
-    if (r.status === 200) {
-      state.user = await r.json();
-      showApp();
-      return true;
-    }
-  } catch (err) { console.error(err); }
-  showLogin();
-  return false;
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
-
-function showLogin() {
-  $('app').style.display = 'none';
-  $('login-overlay').style.display = 'flex';
-  setTimeout(() => $('pin-field').focus(), 50);
-}
-
-function showApp() {
-  $('login-overlay').style.display = 'none';
-  $('app').style.display = 'block';
-  $('user-chip').innerHTML = escapeHtml(state.user.name) + (state.user.is_admin ? ' <span class="role">admin</span>' : '');
-  $('admin-btn').style.display = state.user.is_admin ? '' : 'none';
-  loadFilters();
-  refresh();
-}
-
-async function attemptLogin(pin) {
-  $('login-error').textContent = '';
-  try {
-    const r = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin }),
-    });
-    const data = await r.json();
-    if (r.ok && data.ok) {
-      state.user = data.user;
-      showApp();
-    } else {
-      $('login-error').textContent = data.error || 'Invalid PIN';
-      $('pin-field').value = '';
-      setTimeout(() => $('pin-field').focus(), 50);
-    }
-  } catch (err) {
-    $('login-error').textContent = 'Login failed: ' + err.message;
-  }
-}
-
-$('pin-field').addEventListener('input', e => {
-  const v = e.target.value.replace(/\D/g, '').slice(0, 6);
-  e.target.value = v;
-  if (v.length === 6) attemptLogin(v);
-});
-
-$('logout-btn').addEventListener('click', async () => {
-  await fetch('/api/logout', { method: 'POST' });
-  state.user = null;
-  showLogin();
-});
-
-// ---- data loading (only runs when authed) ----
-function calcDateRange() {
-  if (!state.dateRange) return { from: '', to: '' };
-  const today = new Date();
-  if (state.dateRange === 'fy') {
-    const fy = new Date(today.getFullYear(), 6, 1);
-    if (today < fy) fy.setFullYear(fy.getFullYear() - 1);
-    return { from: fy.toISOString().slice(0, 10), to: '' };
-  }
-  const days = parseInt(state.dateRange);
-  const from = new Date(today);
-  from.setDate(from.getDate() - days);
-  return { from: from.toISOString().slice(0, 10), to: '' };
-}
-
-async function loadFilters() {
-  try {
-    const r = await fetch('/purchases/filters');
-    if (!r.ok) return;
-    const data = await r.json();
-    const supSel = $('supplier');
-    const catSel = $('category');
-    // Reset (keep "All" option)
-    supSel.innerHTML = '<option value="">All suppliers</option>';
-    catSel.innerHTML = '<option value="">All categories</option>';
-    (data.suppliers || []).forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; supSel.appendChild(o); });
-    (data.categories || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
-  } catch (err) { console.error('filters', err); }
-}
-
-async function loadStats() {
-  try {
-    const r = await fetch('/purchases/stats');
-    if (!r.ok) return;
-    const s = await r.json();
-    $('stat-pos').textContent = (s.purchase_orders || 0).toLocaleString();
-    $('stat-lines').textContent = (s.line_items || 0).toLocaleString();
-    $('stat-spend').textContent = fmtMoney(s.total_spend);
-    $('stat-suppliers').textContent = (s.suppliers || 0).toLocaleString();
-    $('sync-text').textContent = 'Last synced ' + fmtRelative(s.last_synced_at);
-  } catch (err) { console.error('stats', err); }
-}
-
-async function loadResults() {
-  $('results-tbody').innerHTML = '<tr><td colspan="10" class="loading">Loading…</td></tr>';
-  const params = new URLSearchParams();
-  if (state.search) params.set('search', state.search);
-  if (state.supplier) params.set('supplier', state.supplier);
-  if (state.category) params.set('category', state.category);
-  const range = calcDateRange();
-  if (range.from) params.set('from', range.from);
-  if (range.to) params.set('to', range.to);
-  params.set('sort', state.sort);
-  params.set('direction', state.direction);
-  params.set('page', state.page);
-  params.set('limit', state.limit);
-
-  try {
-    const r = await fetch('/purchases?' + params.toString());
-    if (!r.ok) {
-      $('results-tbody').innerHTML = '<tr><td colspan="10" class="empty">Error loading results</td></tr>';
-      return;
-    }
-    const data = await r.json();
-    const rows = data.results || [];
-    const tbody = $('results-tbody');
-    if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="10" class="empty">No results match your filters</td></tr>';
-    } else {
-      tbody.innerHTML = rows.map(r => `
-        <tr>
-          <td>${fmtDate(r.date_invoiced)}</td>
-          <td>${escapeHtml(r.po_number)}</td>
-          <td>${escapeHtml(r.supplier_invoice_no)}</td>
-          <td>${escapeHtml(r.supplier)}</td>
-          <td>${escapeHtml(r.part_no)}</td>
-          <td class="desc-cell">${escapeHtml(r.description)}</td>
-          <td>${r.category ? '<span class="pill">' + escapeHtml(r.category) + '</span>' : ''}</td>
-          <td class="num">${fmtQty(r.qty)}</td>
-          <td class="num">${fmt2(r.unit_price)}</td>
-          <td class="num">${fmt2(r.line_total)}</td>
-        </tr>
-      `).join('');
-    }
-    const total = data.total || 0;
-    const start = total === 0 ? 0 : (state.page - 1) * state.limit + 1;
-    const end = Math.min(state.page * state.limit, total);
-    $('pagination-info').textContent = total === 0 ? 'No results' : `Showing ${start.toLocaleString()}–${end.toLocaleString()} of ${total.toLocaleString()}`;
-    $('prev-btn').disabled = state.page <= 1;
-    $('next-btn').disabled = end >= total;
-
-    document.querySelectorAll('th[data-col]').forEach(th => {
-      th.classList.toggle('active', th.dataset.col === state.sort);
-      const arrow = th.querySelector('.arrow');
-      if (arrow) arrow.textContent = (th.dataset.col === state.sort && state.direction === 'asc') ? '▲' : '▼';
-    });
-  } catch (err) {
-    $('results-tbody').innerHTML = '<tr><td colspan="10" class="empty">Error loading results</td></tr>';
-    console.error(err);
-  }
-}
-
-function refresh() { loadStats(); loadResults(); }
-
-// ---- search/filter wiring ----
-let searchTimer;
-$('search').addEventListener('input', e => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => { state.search = e.target.value.trim(); state.page = 1; loadResults(); }, 300);
-});
-['supplier', 'category', 'date-range'].forEach(id => {
-  $(id).addEventListener('change', e => {
-    const key = id === 'date-range' ? 'dateRange' : id;
-    state[key] = e.target.value; state.page = 1; loadResults();
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    method: opts.method || 'GET',
+    headers: opts.body ? { 'Content-Type': 'application/json' } : {},
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+    credentials: 'same-origin',
   });
-});
-$('clear-btn').addEventListener('click', () => {
-  state.search = ''; state.supplier = ''; state.category = ''; state.dateRange = '';
-  state.page = 1;
-  $('search').value = ''; $('supplier').value = ''; $('category').value = ''; $('date-range').value = '';
-  loadResults();
-});
-document.querySelectorAll('th[data-col]').forEach(th => {
-  th.addEventListener('click', () => {
-    const col = th.dataset.col;
-    if (state.sort === col) state.direction = state.direction === 'asc' ? 'desc' : 'asc';
-    else { state.sort = col; state.direction = 'desc'; }
-    state.page = 1; loadResults();
-  });
-});
-$('prev-btn').addEventListener('click', () => { if (state.page > 1) { state.page--; loadResults(); } });
-$('next-btn').addEventListener('click', () => { state.page++; loadResults(); });
+  let data = null;
+  try { data = await res.json(); } catch { data = null; }
+  if (res.status === 401 && path !== '/api/login') { state.me = null; renderLogin(); throw new Error('Please log in'); }
+  if (!res.ok) throw new Error((data && data.error) || ('Request failed (' + res.status + ')'));
+  return data;
+}
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+function when(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' h ago';
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' })
+    + ' ' + d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+}
+const STATUS = { ok: 'OK', attention: 'Needs attention', fault: 'Fault', commissioning: 'Commissioning', offline: 'Offline' };
+const TYPES = { personal: 'Personal', saturn: 'Saturn', customer: 'Customer' };
+function statusPill(s) { return `<span class="pill p-${esc(s)}">${esc(STATUS[s] || s)}</span>`; }
 
-$('sync-btn').addEventListener('click', async () => {
-  const btn = $('sync-btn');
-  const orig = btn.textContent;
-  btn.textContent = 'Syncing…'; btn.disabled = true;
-  try {
-    const r = await fetch('/sync/run', { method: 'POST' });
-    const result = await r.json();
-    if (result.ok) {
-      btn.textContent = 'Synced';
-      setTimeout(() => { btn.textContent = orig; btn.disabled = false; refresh(); }, 1500);
-    } else {
-      btn.textContent = 'Sync failed';
-      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
-    }
-  } catch (err) {
-    btn.textContent = 'Sync failed';
-    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2500);
+// Tiny, safe formatter for AI answers: escape first, then **bold**, lists, paragraphs.
+function fmt(text) {
+  const lines = esc(text).split('\n');
+  let html = '', list = null;
+  const close = () => { if (list) { html += `</${list}>`; list = null; } };
+  for (let raw of lines) {
+    const line = raw.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    let m;
+    if ((m = line.match(/^\s*[-*•]\s+(.*)/))) { if (list !== 'ul') { close(); html += '<ul>'; list = 'ul'; } html += `<li>${m[1]}</li>`; }
+    else if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== 'ol') { close(); html += '<ol>'; list = 'ol'; } html += `<li>${m[1]}</li>`; }
+    else if (!line.trim()) { close(); }
+    else if ((m = line.match(/^#{1,4}\s+(.*)/))) { close(); html += `<p><strong>${m[1]}</strong></p>`; }
+    else { close(); html += `<p>${line}</p>`; }
   }
-});
-
-// ---- admin panel ----
-$('admin-btn').addEventListener('click', () => {
-  $('admin-modal').style.display = 'flex';
-  $('pin-reveal-box').style.display = 'none';
-  loadUsers();
-});
-$('admin-close').addEventListener('click', () => { $('admin-modal').style.display = 'none'; });
-
-async function loadUsers() {
-  try {
-    const r = await fetch('/api/admin/users');
-    if (!r.ok) { $('user-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Could not load users</td></tr>'; return; }
-    const users = await r.json();
-    const tbody = $('user-tbody');
-    if (users.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No users yet</td></tr>';
-      return;
-    }
-    tbody.innerHTML = users.map(u => `
-      <tr class="${u.active ? '' : 'inactive'}">
-        <td>${escapeHtml(u.name)}</td>
-        <td>${escapeHtml(u.email)}</td>
-        <td>${escapeHtml(u.phone)}</td>
-        <td>${u.is_admin ? 'Admin' : 'User'}</td>
-        <td>${u.last_login_at ? fmtDate(u.last_login_at) : '—'}</td>
-        <td>${u.active ? 'Active' : 'Disabled'}</td>
-        <td><div class="actions">
-          <button class="btn" data-act="reset" data-id="${u.id}">Reset PIN</button>
-          ${u.active ? `<button class="btn btn-danger" data-act="deactivate" data-id="${u.id}">Disable</button>` : `<button class="btn" data-act="activate" data-id="${u.id}">Enable</button>`}
-        </div></td>
-      </tr>
-    `).join('');
-    tbody.querySelectorAll('button[data-act]').forEach(b => b.addEventListener('click', userAction));
-  } catch (err) { console.error(err); }
+  close();
+  return html;
 }
 
-async function userAction(e) {
-  const btn = e.currentTarget;
-  const id = btn.dataset.id;
-  const act = btn.dataset.act;
-  try {
-    if (act === 'reset') {
-      if (!confirm('Reset this user\'s PIN? Their old PIN will stop working.')) return;
-      const r = await fetch(`/api/admin/users/${id}/reset-pin`, { method: 'POST' });
-      const data = await r.json();
-      if (r.ok && data.ok) showPin(`New PIN for ${data.user.name}`, data.pin);
-      else alert(data.error || 'Failed');
-    } else if (act === 'deactivate') {
-      if (!confirm('Disable this user? They won\'t be able to log in.')) return;
-      const r = await fetch(`/api/admin/users/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active: false }),
-      });
-      if (r.ok) loadUsers(); else alert((await r.json()).error || 'Failed');
-    } else if (act === 'activate') {
-      const r = await fetch(`/api/admin/users/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active: true }),
-      });
-      if (r.ok) loadUsers(); else alert('Failed');
+function shell({ title, sub, back, right, body }) {
+  $root.innerHTML = `
+    <div class="topbar">
+      ${back ? `<button class="back" aria-label="Back" data-go="${esc(back)}">‹</button>` : `<div class="mark">S</div>`}
+      <div class="title"><h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>
+      ${right || ''}
+    </div>
+    <main id="main">${body}</main>`;
+  $root.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.go; }));
+  window.scrollTo(0, 0);
+}
+function loading(title, back) { shell({ title, back, body: `<div class="empty"><span class="spinner"></span></div>` }); }
+function errorView(title, back, err) { shell({ title, back, body: `<div class="error-box">${esc(err.message || err)}</div>` }); }
+
+// ---------------------------------------------------------------- login
+function renderLogin() {
+  $root.innerHTML = `
+    <div class="login"><div class="login-box">
+      <div class="mark">S</div>
+      <h1>Saturn Command</h1>
+      <div class="muted small">Enter your 6-digit PIN</div>
+      <input class="pin" id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" autofocus>
+      <div class="small" id="login-err" style="color:var(--bad);min-height:20px"></div>
+    </div></div>`;
+  const pin = document.getElementById('pin');
+  pin.focus();
+  pin.addEventListener('input', async () => {
+    pin.value = pin.value.replace(/\D/g, '').slice(0, 6);
+    if (pin.value.length !== 6) return;
+    try {
+      await api('/api/login', { method: 'POST', body: { pin: pin.value } });
+      state.me = await api('/api/me');
+      route();
+    } catch (e) {
+      document.getElementById('login-err').textContent = e.message;
+      pin.value = '';
     }
-  } catch (err) { alert('Error: ' + err.message); }
+  });
 }
 
-$('create-user-btn').addEventListener('click', async () => {
-  const name = $('new-user-name').value.trim();
-  if (!name) { alert('Name is required'); return; }
-  const body = {
-    name,
-    email: $('new-user-email').value.trim(),
-    phone: $('new-user-phone').value.trim(),
-    is_admin: $('new-user-admin').checked,
+// ---------------------------------------------------------------- sites list
+async function renderSites() {
+  const me = state.me;
+  const right = `${me.is_admin ? `<button class="icon-btn" data-go="#/team">Team</button>` : ''}
+    <button class="icon-btn" id="logout">Log out</button>`;
+  if (!state.sites) loading('Saturn Command');
+  try { state.sites = await api('/api/sites'); } catch (e) { return errorView('Saturn Command', null, e); }
+
+  const counts = { all: state.sites.length, attention: 0, personal: 0, saturn: 0, customer: 0 };
+  for (const s of state.sites) {
+    if (s.status !== 'ok') counts.attention++;
+    counts[s.site_type] = (counts[s.site_type] || 0) + 1;
+  }
+  const chips = [['all', 'All'], ['attention', 'Not OK'], ['customer', 'Customer'], ['saturn', 'Saturn'], ['personal', 'Personal']]
+    .map(([k, l]) => `<button class="chip ${state.filter === k ? 'on' : ''}" data-f="${k}">${l} ${counts[k] || 0}</button>`).join('');
+
+  shell({
+    title: 'Saturn Command', sub: me.name, right,
+    body: `
+      <input class="search" id="q" type="search" placeholder="Search sites, clients, job numbers" value="${esc(state.q)}">
+      <div class="chips">${chips}</div>
+      <div id="list"></div>
+      ${me.can_add_sites ? `<button class="fab" data-go="#/new">+ New site</button>` : ''}`,
+  });
+  document.getElementById('logout').addEventListener('click', async () => {
+    await api('/api/logout', { method: 'POST' }).catch(() => {});
+    state.me = null; state.sites = null; renderLogin();
+  });
+  document.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { state.filter = b.dataset.f; renderSites(); }));
+  const q = document.getElementById('q');
+  q.addEventListener('input', () => { state.q = q.value; drawList(); });
+  drawList();
+}
+function drawList() {
+  const q = state.q.trim().toLowerCase();
+  const list = state.sites.filter(s => {
+    if (state.filter === 'attention' && s.status === 'ok') return false;
+    if (['personal', 'saturn', 'customer'].includes(state.filter) && s.site_type !== state.filter) return false;
+    if (!q) return true;
+    return [s.name, s.client, s.address, s.aroflo_job, s.summary].some(v => v && v.toLowerCase().includes(q));
+  });
+  const el = document.getElementById('list');
+  if (!state.sites.length) {
+    el.innerHTML = `<div class="empty">No sites yet.${state.me.can_add_sites ? '<br>Tap <strong>+ New site</strong> to add the first one.' : '<br>Ask an admin to give you access to a site.'}</div>`;
+    return;
+  }
+  if (!list.length) { el.innerHTML = `<div class="empty">No sites match.</div>`; return; }
+  el.innerHTML = list.map(s => `
+    <a class="site-item" href="#/site/${s.id}">
+      <span class="dot d-${esc(s.status)}"></span>
+      <div class="main">
+        <div class="name">${esc(s.name)}</div>
+        <div class="meta">${esc([TYPES[s.site_type], s.client, s.aroflo_job && ('Job ' + s.aroflo_job)].filter(Boolean).join(' · '))}</div>
+      </div>
+      ${s.status !== 'ok' ? statusPill(s.status) : ''}
+      ${!state.me.is_admin && s.access === 'view' ? '<span class="pill p-view">View</span>' : ''}
+      <span class="chev">›</span>
+    </a>`).join('');
+}
+
+// ---------------------------------------------------------------- site form (new + settings)
+function siteForm(s = {}, { creating }) {
+  const opt = (map, cur) => Object.entries(map).map(([k, v]) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${v}</option>`).join('');
+  return `
+    <form id="site-form">
+      <div class="card">
+        <h2>Site details</h2>
+        <label class="f"><span>Site name *</span><input class="i" name="name" required value="${esc(s.name)}" placeholder="e.g. Smith Farm – bore pumps"></label>
+        <div class="grid2">
+          <label class="f"><span>Type</span><select class="i" name="site_type">${opt(TYPES, s.site_type || 'customer')}</select></label>
+          <label class="f"><span>Status</span><select class="i" name="status">${opt(STATUS, s.status || (creating ? 'commissioning' : 'ok'))}</select></label>
+          <label class="f"><span>Client</span><input class="i" name="client" value="${esc(s.client)}"></label>
+          <label class="f"><span>AroFlo job no.</span><input class="i" name="aroflo_job" value="${esc(s.aroflo_job)}"></label>
+        </div>
+        <label class="f"><span>Address</span><input class="i" name="address" value="${esc(s.address)}"></label>
+        <label class="f"><span>Summary</span><textarea class="i" name="summary" placeholder="What's here and what it does, in a few lines">${esc(s.summary)}</textarea></label>
+      </div>
+      <div class="card">
+        <h2>Equipment &amp; I/O</h2>
+        <label class="f"><span>Equipment</span><textarea class="i" name="equipment" placeholder="PLC, I/O modules, compressors, pumps, meters, model numbers…">${esc(s.equipment)}</textarea></label>
+        <label class="f"><span>I/O list</span><textarea class="i" name="io_list" placeholder="DI0  C1-AUTO  Compressor 1 HOA in Auto&#10;DQ0  C1-RUN   Compressor 1 run command">${esc(s.io_list)}</textarea></label>
+        <label class="f"><span>Network</span><textarea class="i" name="network" placeholder="IP addresses, VLANs, router, remote access">${esc(s.network)}</textarea></label>
+        <label class="f"><span>Notes</span><textarea class="i" name="notes" placeholder="Access, keys, contacts, quirks">${esc(s.notes)}</textarea></label>
+      </div>
+      <div class="card">
+        <h2>Live data (Home Assistant)</h2>
+        <div class="tiny" style="margin-bottom:10px">Optional. The token is stored encrypted and never shown again.</div>
+        <label class="f"><span>Home Assistant URL</span><input class="i" name="ha_url" inputmode="url" value="${esc(s.ha_url)}" placeholder="https://xxxx.ui.nabu.casa"></label>
+        <label class="f"><span>Long-lived access token ${s.has_ha_token ? '(saved — leave blank to keep)' : ''}</span><input class="i" name="ha_token" type="password" autocomplete="off" placeholder="${s.has_ha_token ? '••••••••' : 'Paste token'}"></label>
+        ${s.has_ha_token ? `<label class="check"><input type="checkbox" name="clear_ha_token"> Remove the saved token</label>` : ''}
+        <label class="f"><span>Points to show (one entity ID per line)</span><textarea class="i" name="ha_entities" placeholder="sensor.shed_air_pressure&#10;sensor.shed_c1_status&#10;sensor.shed_tank_level">${esc(s.ha_entities)}</textarea></label>
+      </div>
+      <div id="form-err"></div>
+      <button class="btn btn-primary btn-block" type="submit">${creating ? 'Create site' : 'Save changes'}</button>
+      ${!creating && state.me.is_admin ? `<div style="height:12px"></div><button class="btn btn-danger btn-block" type="button" id="del-site">Delete site</button>` : ''}
+    </form>`;
+}
+function readForm(form) {
+  const fd = new FormData(form);
+  const body = {};
+  for (const [k, v] of fd.entries()) { if (k !== 'clear_ha_token') body[k] = v; }
+  if (!body.ha_token) delete body.ha_token;
+  if (form.querySelector('[name=clear_ha_token]')?.checked) body.clear_ha_token = true;
+  return body;
+}
+
+function renderNewSite() {
+  if (!state.me.can_add_sites) { location.hash = '#/'; return; }
+  shell({ title: 'New site', back: '#/', body: siteForm({}, { creating: true }) });
+  const form = document.getElementById('site-form');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = form.querySelector('[type=submit]'); btn.disabled = true;
+    try {
+      const site = await api('/api/sites', { method: 'POST', body: readForm(form) });
+      state.sites = null;
+      toast('Site created');
+      location.hash = '#/site/' + site.id;
+    } catch (err) {
+      document.getElementById('form-err').innerHTML = `<div class="error-box">${esc(err.message)}</div>`;
+      btn.disabled = false;
+    }
+  });
+}
+
+// ---------------------------------------------------------------- site detail
+const SITE_TABS = [['overview', 'Overview'], ['live', 'Live'], ['ask', 'Ask AI'], ['equipment', 'Equipment'], ['log', 'Log'], ['settings', 'Settings']];
+
+async function renderSite(id, tab) {
+  loading('Loading…', '#/');
+  let site;
+  try { site = await api('/api/sites/' + id); } catch (e) { return errorView('Site', '#/', e); }
+  const tabs = SITE_TABS.filter(([k]) => k !== 'settings' || site.access === 'edit');
+  if (!tabs.find(t => t[0] === tab)) tab = 'overview';
+  shell({
+    title: site.name,
+    sub: [TYPES[site.site_type], site.client].filter(Boolean).join(' · '),
+    back: '#/',
+    right: statusPill(site.status),
+    body: `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${k === tab ? 'on' : ''}" data-go="#/site/${site.id}/${k}">${esc(l)}</button>`).join('')}</div>
+           <div id="tab"></div>`,
+  });
+  const $tab = document.getElementById('tab');
+  const onTab = document.querySelector('.tab.on');
+  if (onTab) onTab.scrollIntoView({ inline: 'center', block: 'nearest' });
+  const views = { overview: tabOverview, live: tabLive, equipment: tabEquipment, log: tabLog, ask: tabAsk, settings: tabSettings };
+  views[tab](site, $tab);
+}
+
+function textCard(title, text, emptyMsg) {
+  return `<div class="card"><h2>${esc(title)}</h2>${text ? `<pre class="block">${esc(text)}</pre>` : `<div class="tiny">${esc(emptyMsg)}</div>`}</div>`;
+}
+
+async function tabOverview(site, $tab) {
+  $tab.innerHTML = `
+    <div class="card">
+      <dl class="kv">
+        <dt>Status</dt><dd>${statusPill(site.status)}</dd>
+        <dt>Type</dt><dd>${esc(TYPES[site.site_type] || site.site_type)}</dd>
+        ${site.client ? `<dt>Client</dt><dd>${esc(site.client)}</dd>` : ''}
+        ${site.address ? `<dt>Address</dt><dd><a href="https://maps.google.com/?q=${encodeURIComponent(site.address)}" target="_blank" rel="noopener">${esc(site.address)}</a></dd>` : ''}
+        ${site.aroflo_job ? `<dt>AroFlo job</dt><dd>${esc(site.aroflo_job)}</dd>` : ''}
+        <dt>Your access</dt><dd><span class="pill p-${site.access}">${site.access === 'edit' ? 'Can edit' : 'View only'}</span></dd>
+        <dt>Updated</dt><dd>${esc(when(site.updated_at))}</dd>
+      </dl>
+    </div>
+    ${textCard('Summary', site.summary, 'No summary yet.')}
+    <div class="card"><div class="row"><h2 style="margin:0">Live now</h2><span class="spacer"></span><a href="#/site/${site.id}/live" class="small">All points ›</a></div><div id="ov-live" style="margin-top:10px"><span class="spinner"></span></div></div>
+    <div class="card"><div class="row"><h2 style="margin:0">Latest log</h2><span class="spacer"></span><a href="#/site/${site.id}/log" class="small">Full log ›</a></div><div id="ov-log" style="margin-top:6px"><span class="spinner"></span></div></div>`;
+  api(`/api/sites/${site.id}/live`).then(live => {
+    document.getElementById('ov-live').innerHTML = live.ok ? tiles(live.items.slice(0, 6)) : `<div class="tiny">${esc(live.error)}</div>`;
+  }).catch(e => { document.getElementById('ov-live').innerHTML = `<div class="tiny">${esc(e.message)}</div>`; });
+  api(`/api/sites/${site.id}/log`).then(log => {
+    document.getElementById('ov-log').innerHTML = log.length ? log.slice(0, 3).map(logItem).join('') : `<div class="tiny">Nothing logged yet.</div>`;
+  }).catch(() => {});
+}
+
+function tiles(items) {
+  return `<div class="tiles">${items.map(i => `
+    <div class="tile"><div class="n">${esc(i.name)}</div>
+      <div class="v">${esc(i.state)} <span class="u">${esc(i.unit)}</span></div>
+      <div class="t">${esc(when(i.last_changed))}</div></div>`).join('')}</div>`;
+}
+
+let liveTimer = null;
+async function tabLive(site, $tab) {
+  $tab.innerHTML = `<div class="row" style="margin-bottom:10px"><span class="tiny" id="live-at"></span><span class="spacer"></span><button class="btn" id="refresh">Refresh</button></div><div id="live"><span class="spinner"></span></div>`;
+  const load = async () => {
+    try {
+      const live = await api(`/api/sites/${site.id}/live`);
+      const el = document.getElementById('live');
+      if (!el) return;
+      el.innerHTML = live.ok ? tiles(live.items) : `<div class="note-box">${esc(live.error)}</div>`;
+      document.getElementById('live-at').textContent = live.ok ? 'Updated ' + new Date(live.fetched_at).toLocaleTimeString('en-AU') : '';
+    } catch (e) { const el = document.getElementById('live'); if (el) el.innerHTML = `<div class="error-box">${esc(e.message)}</div>`; }
   };
-  const btn = $('create-user-btn');
-  btn.disabled = true;
-  try {
-    const r = await fetch('/api/admin/users', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await r.json();
-    if (r.ok && data.ok) {
-      showPin(`PIN for ${data.user.name}`, data.pin);
-      $('new-user-name').value = ''; $('new-user-email').value = ''; $('new-user-phone').value = ''; $('new-user-admin').checked = false;
-      loadUsers();
-    } else {
-      alert(data.error || 'Failed to create user');
-    }
-  } catch (err) {
-    alert('Error: ' + err.message);
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-function showPin(label, pin) {
-  const box = $('pin-reveal-box');
-  box.style.display = 'block';
-  box.className = 'pin-reveal';
-  box.innerHTML = `
-    <div class="pin-reveal-label">${escapeHtml(label)}</div>
-    <div class="pin-reveal-pin">${escapeHtml(pin)}</div>
-    <div class="pin-reveal-warn">Write this down or send it now — it won't be shown again. (You can always reset it later.)</div>
-  `;
+  document.getElementById('refresh').addEventListener('click', load);
+  await load();
+  clearInterval(liveTimer);
+  liveTimer = setInterval(() => { if (document.getElementById('live')) load(); else clearInterval(liveTimer); }, 15000);
 }
 
-// ---- init ----
-checkAuth();
+function tabEquipment(site, $tab) {
+  $tab.innerHTML = textCard('Equipment', site.equipment, 'No equipment recorded.')
+    + textCard('I/O list', site.io_list, 'No I/O list recorded.')
+    + textCard('Network', site.network, 'No network details recorded.')
+    + textCard('Notes', site.notes, 'No notes.');
+}
+
+function logItem(l) {
+  return `<div class="log-item"><div>${esc(l.entry)}</div><div class="who">${esc(l.user_name || 'Unknown')} · ${esc(when(l.created_at))}</div></div>`;
+}
+async function tabLog(site, $tab) {
+  $tab.innerHTML = `
+    ${site.access === 'edit' ? `<div class="card"><form id="log-form"><textarea class="i" name="entry" placeholder="What happened? e.g. Replaced C2 contactor, tested OK" style="min-height:80px"></textarea><div style="height:8px"></div><button class="btn btn-primary btn-block">Add to log</button></form></div>` : ''}
+    <div class="card" id="log"><span class="spinner"></span></div>`;
+  const load = async () => {
+    const log = await api(`/api/sites/${site.id}/log`);
+    document.getElementById('log').innerHTML = log.length ? log.map(logItem).join('') : `<div class="tiny">Nothing logged yet.</div>`;
+  };
+  const form = document.getElementById('log-form');
+  if (form) form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const entry = form.entry.value.trim();
+    if (!entry) return;
+    try { await api(`/api/sites/${site.id}/log`, { method: 'POST', body: { entry } }); form.reset(); toast('Added'); load(); }
+    catch (err) { toast(err.message); }
+  });
+  load().catch(e => { document.getElementById('log').innerHTML = `<div class="error-box">${esc(e.message)}</div>`; });
+}
+
+function tabAsk(site, $tab) {
+  const chat = state.chats[site.id] || (state.chats[site.id] = []);
+  const suggestions = ['Is everything running OK right now?', "What's wired to each output?", 'What changed here recently?', 'Talk me through checking a fault on site'];
+  $tab.innerHTML = `
+    ${state.me.ai_enabled ? '' : `<div class="note-box">The AI isn't switched on yet. An admin needs to add the Anthropic API key in Railway.</div>`}
+    <div class="tiny" style="margin-bottom:10px">Claude answers from this site's record, log and live readings. It can't change anything yet.</div>
+    <div class="chat" id="chat"></div>
+    <div class="suggest" id="sugg">${chat.length ? '' : suggestions.map(s => `<button class="chip" data-s="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+    <form class="ask-bar" id="ask"><textarea id="question" rows="1" placeholder="Ask about ${esc(site.name)}…"></textarea><button class="btn btn-primary">Ask</button></form>`;
+  const $chat = document.getElementById('chat');
+  const draw = () => {
+    $chat.innerHTML = chat.map(m => m.role === 'user'
+      ? `<div class="msg user">${esc(m.text)}</div>`
+      : m.role === 'error' ? `<div class="msg err">${esc(m.text)}</div>`
+      : m.role === 'pending' ? `<div class="msg assistant"><span class="spinner"></span> Thinking…</div>`
+      : `<div class="msg assistant">${fmt(m.text)}</div>`).join('');
+  };
+  draw();
+  const q = document.getElementById('question');
+  q.addEventListener('input', () => { q.style.height = 'auto'; q.style.height = Math.min(q.scrollHeight, 160) + 'px'; });
+  q.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && window.matchMedia('(pointer:fine)').matches) { e.preventDefault(); send(); } });
+  const send = async (text) => {
+    const question = (text || q.value).trim();
+    if (!question) return;
+    q.value = ''; q.style.height = 'auto';
+    document.getElementById('sugg').innerHTML = '';
+    const history = chat.filter(m => m.role === 'user' || m.role === 'assistant').map(m => ({ role: m.role, text: m.text }));
+    chat.push({ role: 'user', text: question }, { role: 'pending' });
+    draw(); window.scrollTo(0, document.body.scrollHeight);
+    try {
+      const r = await api(`/api/sites/${site.id}/ask`, { method: 'POST', body: { question, history } });
+      chat.pop(); chat.push({ role: 'assistant', text: r.answer });
+    } catch (e) {
+      chat.pop(); chat.push({ role: 'error', text: e.message });
+    }
+    if (document.getElementById('chat') === $chat) { draw(); window.scrollTo(0, document.body.scrollHeight); }
+  };
+  document.getElementById('ask').addEventListener('submit', e => { e.preventDefault(); send(); });
+  document.querySelectorAll('[data-s]').forEach(b => b.addEventListener('click', () => send(b.dataset.s)));
+}
+
+function tabSettings(site, $tab) {
+  $tab.innerHTML = siteForm(site, { creating: false });
+  const form = document.getElementById('site-form');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = form.querySelector('[type=submit]'); btn.disabled = true;
+    try {
+      await api('/api/sites/' + site.id, { method: 'PATCH', body: readForm(form) });
+      state.sites = null;
+      toast('Saved');
+      renderSite(site.id, 'overview');
+    } catch (err) {
+      document.getElementById('form-err').innerHTML = `<div class="error-box">${esc(err.message)}</div>`;
+      btn.disabled = false;
+    }
+  });
+  const del = document.getElementById('del-site');
+  if (del) del.addEventListener('click', async () => {
+    if (!confirm(`Delete "${site.name}" and its whole log? This can't be undone.`)) return;
+    try { await api('/api/sites/' + site.id, { method: 'DELETE' }); state.sites = null; toast('Site deleted'); location.hash = '#/'; }
+    catch (err) { toast(err.message); }
+  });
+}
+
+// ---------------------------------------------------------------- team (admin)
+async function renderTeam() {
+  if (!state.me.is_admin) { location.hash = '#/'; return; }
+  loading('Team', '#/');
+  let users;
+  try { users = await api('/api/admin/users'); } catch (e) { return errorView('Team', '#/', e); }
+  shell({
+    title: 'Team', sub: users.filter(u => u.active).length + ' active', back: '#/',
+    body: `
+      <div id="pin-area"></div>
+      <div class="card">
+        <h2>Add employee</h2>
+        <form id="add-user">
+          <div class="grid2">
+            <label class="f"><span>Name *</span><input class="i" name="name" required></label>
+            <label class="f"><span>Role</span><input class="i" name="role_title" placeholder="e.g. Senior electrician"></label>
+            <label class="f"><span>Mobile</span><input class="i" name="phone" inputmode="tel"></label>
+            <label class="f"><span>Email</span><input class="i" name="email" inputmode="email"></label>
+          </div>
+          <label class="check"><input type="checkbox" name="can_add_sites"> Can add new sites</label>
+          <label class="check"><input type="checkbox" name="is_admin"> Admin (sees and edits everything, manages the team)</label>
+          <div style="height:10px"></div>
+          <button class="btn btn-primary btn-block">Add and create PIN</button>
+        </form>
+      </div>
+      <div class="card" style="padding:4px 14px">
+        ${users.map(u => `
+          <a class="acc" href="#/team/${u.id}" style="text-decoration:none;color:inherit;${u.active ? '' : 'opacity:.5'}">
+            <div class="nm"><div style="font-weight:600">${esc(u.name)} ${u.is_admin ? '<span class="pill p-type">Admin</span>' : ''}</div>
+              <div class="tiny">${esc([u.role_title, u.is_admin ? 'All sites' : `${u.site_count} site${u.site_count === 1 ? '' : 's'}${u.edit_count ? ` (${u.edit_count} edit)` : ''}`, u.active ? '' : 'Inactive'].filter(Boolean).join(' · '))}</div></div>
+            <span class="chev">›</span>
+          </a>`).join('')}
+      </div>`,
+  });
+  const form = document.getElementById('add-user');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    try {
+      const r = await api('/api/admin/users', { method: 'POST', body: {
+        name: fd.get('name'), role_title: fd.get('role_title'), phone: fd.get('phone'), email: fd.get('email'),
+        can_add_sites: !!fd.get('can_add_sites'), is_admin: !!fd.get('is_admin') } });
+      sessionStorage.setItem('pin-reveal', JSON.stringify({ id: r.user.id, name: r.user.name, pin: r.pin }));
+      location.hash = '#/team/' + r.user.id;
+    } catch (err) { toast(err.message); }
+  });
+}
+
+async function renderPerson(id) {
+  if (!state.me.is_admin) { location.hash = '#/'; return; }
+  loading('Employee', '#/team');
+  let data;
+  try { data = await api('/api/admin/users/' + id); } catch (e) { return errorView('Employee', '#/team', e); }
+  const u = data.user;
+  const isMe = u.id === state.me.id;
+  let reveal = null;
+  try { reveal = JSON.parse(sessionStorage.getItem('pin-reveal') || 'null'); } catch {}
+  if (reveal && String(reveal.id) === String(u.id)) sessionStorage.removeItem('pin-reveal'); else reveal = null;
+
+  const access = Object.fromEntries(data.sites.map(s => [s.id, s.access]));
+  shell({
+    title: u.name, sub: [u.role_title, u.active ? 'Active' : 'Inactive'].filter(Boolean).join(' · '), back: '#/team',
+    body: `
+      <div id="pin-area">${reveal ? pinReveal(reveal) : ''}</div>
+      <div class="card">
+        <h2>Profile</h2>
+        <form id="profile">
+          <div class="grid2">
+            <label class="f"><span>Name</span><input class="i" name="name" value="${esc(u.name)}" required></label>
+            <label class="f"><span>Role</span><input class="i" name="role_title" value="${esc(u.role_title)}"></label>
+            <label class="f"><span>Mobile</span><input class="i" name="phone" value="${esc(u.phone)}" inputmode="tel"></label>
+            <label class="f"><span>Email</span><input class="i" name="email" value="${esc(u.email)}" inputmode="email"></label>
+          </div>
+          <label class="check"><input type="checkbox" name="can_add_sites" ${u.can_add_sites ? 'checked' : ''}> Can add new sites</label>
+          <label class="check"><input type="checkbox" name="is_admin" ${u.is_admin ? 'checked' : ''} ${isMe ? 'disabled' : ''}> Admin (sees and edits everything, manages the team)</label>
+          <label class="check"><input type="checkbox" name="active" ${u.active ? 'checked' : ''} ${isMe ? 'disabled' : ''}> Active (can log in)</label>
+          <div style="height:10px"></div>
+          <button class="btn btn-primary btn-block">Save profile</button>
+        </form>
+        <div class="tiny" style="margin-top:10px">Last login: ${esc(u.last_login_at ? when(u.last_login_at) : 'never')}</div>
+      </div>
+      <div class="card">
+        <div class="row"><h2 style="margin:0">Site access</h2><span class="spacer"></span><span class="tiny" id="acc-saved"></span></div>
+        ${u.is_admin ? `<div class="tiny" style="margin-top:8px">Admins can see and edit every site.</div>` :
+          data.sites.length ? `<div class="tiny" style="margin:6px 0 4px">Tick what ${esc(u.name.split(' ')[0])} can see. Changes save straight away.</div>
+            <div class="row" style="gap:6px;margin:8px 0"><button class="btn" data-all="none">None</button><button class="btn" data-all="view">All view</button><button class="btn" data-all="edit">All edit</button></div>
+            <div id="acc-list">${data.sites.map(s => accRow(s, access[s.id])).join('')}</div>`
+          : `<div class="tiny" style="margin-top:8px">No sites yet.</div>`}
+      </div>
+      <div class="card">
+        <h2>PIN</h2>
+        <div class="tiny" style="margin-bottom:10px">Makes a new 6-digit PIN. The old one stops working straight away.</div>
+        <button class="btn btn-block" id="reset-pin">Reset PIN</button>
+      </div>`,
+  });
+
+  document.getElementById('profile').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target;
+    const body = { name: f.name.value, role_title: f.role_title.value, phone: f.phone.value, email: f.email.value, can_add_sites: f.can_add_sites.checked };
+    if (!isMe) { body.is_admin = f.is_admin.checked; body.active = f.active.checked; }
+    try { await api('/api/admin/users/' + u.id, { method: 'PATCH', body }); toast('Saved'); renderPerson(u.id); }
+    catch (err) { toast(err.message); }
+  });
+  document.getElementById('reset-pin').addEventListener('click', async () => {
+    if (!confirm(`Make a new PIN for ${u.name}?`)) return;
+    try {
+      const r = await api(`/api/admin/users/${u.id}/reset-pin`, { method: 'POST' });
+      document.getElementById('pin-area').innerHTML = pinReveal({ name: u.name, pin: r.pin });
+      window.scrollTo(0, 0);
+    } catch (err) { toast(err.message); }
+  });
+
+  const save = async (changes) => {
+    const saved = document.getElementById('acc-saved');
+    saved.textContent = 'Saving…';
+    try {
+      await api(`/api/admin/users/${u.id}/access`, { method: 'PUT', body: { access: changes } });
+      changes.forEach(c => { access[c.site_id] = c.level; });
+      saved.textContent = 'Saved';
+    } catch (err) { saved.textContent = ''; toast(err.message); }
+    document.getElementById('acc-list').innerHTML = data.sites.map(s => accRow(s, access[s.id])).join('');
+  };
+  const list = document.getElementById('acc-list');
+  if (list) list.addEventListener('click', e => {
+    const b = e.target.closest('[data-site]');
+    if (b) save([{ site_id: Number(b.dataset.site), level: b.dataset.level }]);
+  });
+  document.querySelectorAll('[data-all]').forEach(b => b.addEventListener('click', () => {
+    save(data.sites.map(s => ({ site_id: s.id, level: b.dataset.all })));
+  }));
+}
+function accRow(s, level) {
+  const seg = ['none', 'view', 'edit'].map(l => `<button type="button" data-site="${s.id}" data-level="${l}" class="${level === l ? 'on-' + l : ''}">${{ none: 'None', view: 'View', edit: 'Edit' }[l]}</button>`).join('');
+  return `<div class="acc"><div class="nm"><div style="font-weight:500">${esc(s.name)}</div><div class="tiny">${esc([TYPES[s.site_type], s.client].filter(Boolean).join(' · '))}</div></div><div class="seg">${seg}</div></div>`;
+}
+function pinReveal(r) {
+  return `<div class="pin-reveal"><div class="small">PIN for <strong>${esc(r.name)}</strong></div><div class="big">${esc(r.pin)}</div>
+    <div class="small">Give it to them now. It won't be shown again.</div></div>`;
+}
+
+// ---------------------------------------------------------------- router
+function route() {
+  if (!state.me) return renderLogin();
+  clearInterval(liveTimer);
+  const parts = (location.hash || '#/').replace(/^#\/?/, '').split('/').filter(Boolean);
+  if (parts[0] === 'site' && parts[1]) return renderSite(parts[1], parts[2] || 'overview');
+  if (parts[0] === 'new') return renderNewSite();
+  if (parts[0] === 'team' && parts[1]) return renderPerson(parts[1]);
+  if (parts[0] === 'team') return renderTeam();
+  return renderSites();
+}
+window.addEventListener('hashchange', route);
+
+(async () => {
+  try { state.me = await api('/api/me'); } catch { state.me = null; }
+  route();
+})();
 </script>
 </body>
 </html>
