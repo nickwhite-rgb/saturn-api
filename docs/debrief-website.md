@@ -124,3 +124,23 @@ DI/DQ channels are 0–15. AI is 0–3; only AI0 and AI1 can be forced. The defa
 - **OpenPLC "persistent storage" must stay OFF**, or forces could survive a PLC restart.
 - AI cost: roughly a few cents per question (estimate).
 - Customer jobs: wording on remote access and AI use belongs in customer agreements (solicitor to check).
+
+## Look and permissions decisions (23 Nov 2026)
+
+Mock-ups: https://claude.ai/artifact/Fq6icUzQXM3vonxnjjwKN4
+
+- **Looks:** Nick likes design 1 (dark "Control Room") and design 2 (light "Clean Light"). Design 3 (Industrial) is rejected.
+  - Build **one layout with light and dark modes**, with a **sun/moon toggle at the top of every screen** and a Theme option in Settings (Light / Dark / Match phone).
+  - Suggested approach: design 2's layout in both modes, with design 1's colours for dark.
+- **Settings (gear) button at the top** opens:
+  - Settings: profile, theme, change PIN, What's new (version number), log out
+  - Super-admin section: Users & permissions, Sites, Alerts & notifications, Audit log
+- **Roles:**
+  - **Super admin** (Nick is the only one for now; only a super admin can make another) and **User**.
+  - Super admins see and change everything, including users. (The current code's `is_admin` = super admin.)
+- **New users start with NO sites and NO adjust rights.** The super admin ticks what they get.
+- **The per-user page is tick-and-flick:**
+  - Role (User / Super admin) and Account active.
+  - Per site: **See** and **Adjust** checkboxes. Adjust needs See, and unticked sites are invisible to them.
+  - Ability ticks: Add new sites, Force I/O (only on sites they can adjust), Ask AI, Get phone alerts.
+- **Versioning:** app versions shown as v1.0, v1.1, v1.2…; v2.0 for a major reshuffle. This was suggested to Nick, who hasn't confirmed the What's new page or PLC program versioning yet.
