@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;600&display=swap');
+
+@font-face {
+  font-family: 'Montserrat Local';
+  src: url('fonts/Montserrat-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+}
+
+:root {
+  --navy: #0b103d;
+  --navy-deep: #07091f;
+  --navy-mid: #141966;
+  --purple: #6c2b9e;
+  --purple-lt: #8134be;
+  --lavender: #cbb3e6;
+  --silver: #c7cad3;
+  --silver-lt: #e8eaef;
+  --cream: #faf7f2;
+  --grey-lt: #f4f5f7;
+  --white: #ffffff;
+  --text: #0b103d;
+  --text-body: #444444;
+  --logo-navy: #1f2e5c;
+  --font-head: 'Montserrat', 'Montserrat Local', sans-serif;
+  --font-body: 'Open Sans', 'Montserrat Local', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .head {
+  font-family: var(--font-head);
+  color: var(--text);
+  line-height: 1.12;
+}
+h1 { font-weight: 800; letter-spacing: 0.02em; }
+h2 { font-weight: 700; letter-spacing: 0.02em; }
+h3 { font-weight: 700; }
+
+.overline {
+  font-family: var(--font-head);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.tag {
+  display: inline-block;
+  background: var(--purple);
+  color: var(--white);
+  padding: 0.04em 0.28em;
+}
+.tag--lean { transform: skewX(-8deg); }
+.tag--lean > span { display: inline-block; transform: skewX(8deg); }
+
+.btn {
+  display: inline-block;
+  font-family: var(--font-head);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 14px 28px;
+  border-radius: 8px;
+  background: var(--purple);
+  color: var(--white);
+  text-decoration: none;
+}
+
+.on-navy { background: var(--navy); color: var(--white); }
+.on-navy h1, .on-navy h2, .on-navy h3 { color: var(--white); }
+.on-navy .overline { color: var(--lavender); }
+
+.rule { height: 3px; background: var(--lavender); border: 0; }
+.rule--purple { background: var(--purple); }

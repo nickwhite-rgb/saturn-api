@@ -144,3 +144,25 @@ Mock-ups: https://claude.ai/artifact/Fq6icUzQXM3vonxnjjwKN4
   - Per site: **See** and **Adjust** checkboxes. Adjust needs See, and unticked sites are invisible to them.
   - Ability ticks: Add new sites, Force I/O (only on sites they can adjust), Ask AI, Get phone alerts.
 - **Versioning:** app versions shown as v1.0, v1.1, v1.2…; v2.0 for a major reshuffle. This was suggested to Nick, who hasn't confirmed the What's new page or PLC program versioning yet.
+
+## Saturn brand (24 Nov 2026)
+
+Nick supplied the official Saturn brand kit. The logos and `brand.css` are in `brand/` in this repo.
+
+- **Logos:**
+  - `logo-navy.png` for light backgrounds, `logo-white.png` for dark.
+  - `planet-navy.png` / `planet-white.png` (the planet mark alone) when there's less than 160 px of width.
+  - Use the files as they are; never redraw or recolour them.
+- **Colours:**
+  - Navy #0B103D (deep #07091F, mid #141966)
+  - Purple #6C2B9E (light #8134BE)
+  - Lavender #CBB3E6
+  - Silver #C7CAD3 (light #E8EAEF)
+  - Light grey #F4F5F7
+- **Fonts:** Montserrat for headings and numbers, Open Sans for body text.
+- **Nick asked for more purple and silver** than the kit's "purple sparingly" rule. The mock-ups use:
+  - purple for active tabs, buttons, the line under the header and the "COMMAND CENTER" label
+  - silver for lines and secondary text
+  - navy as the base
+- Status colours stay separate so they keep their meaning: green = OK, orange = alarm, amber = forced.
+- Mock-ups with the logo and colours: https://claude.ai/artifact/Fq6icUzQXM3vonxnjjwKN4
