@@ -127,7 +127,7 @@ DI/DQ channels are 0–15. AI is 0–3; only AI0 and AI1 can be forced. The defa
 
 ## Look and permissions decisions (23 Nov 2026)
 
-Mock-ups: https://claude.ai/artifact/Fq6icUzQXM3vonxnjjwKN4
+Mock-ups (**approved by Nick, 24 Nov 2026**; copies in `docs/design-mockups/`): https://claude.ai/artifact/Fq6icUzQXM3vonxnjjwKN4
 
 - **Looks:** Nick likes design 1 (dark "Control Room") and design 2 (light "Clean Light"). Design 3 (Industrial) is rejected.
   - Build **one layout with light and dark modes**, with a **sun/moon toggle at the top of every screen** and a Theme option in Settings (Light / Dark / Match phone).

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Control Room dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#cbb3e6}a:hover{color:#ffffff}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #07091f; color: #e8eaef; font-family: 'Open Sans', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="padding: 18px 18px 10px; display: flex; align-items: center; gap: 12px">
+    <img src="/_blob/3cd6e00881bb42c677b4331367fabab1" alt="Saturn Electrical" style="width: 160px; height: auto; display: block">
+    <div style="flex: 1"></div>
+    <button aria-label="Switch to light mode" style="display: flex; align-items: center; gap: 2px; background: #141966; border: 1px solid #2e3480; border-radius: 999px; padding: 3px; cursor: pointer"><span style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #c7cad3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></span><span style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e8eaef; color: #07091f"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></span></button>
+    <button aria-label="Settings" style="width: 40px; height: 40px; border-radius: 10px; background: #141966; border: 1px solid #2e3480; color: #e8eaef; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+  </div>
+  <div style="padding: 0 18px 8px; display: flex; align-items: center; gap: 8px"><span style="font-family: Montserrat, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; color: #cbb3e6">COMMAND CENTER</span><span style="font-size: 12px; color: #c7cad3">· updated 12 s ago</span></div>
+  <nav style="display: flex; gap: 4px; padding: 0 12px 12px; border-bottom: 3px solid #6c2b9e">
+    <a href="#" style="padding: 9px 12px; border-radius: 8px; background: #6c2b9e; color: #ffffff; font-size: 13px; font-weight: 600; text-decoration: none">Overview</a>
+    <a href="#" style="padding: 9px 10px; border-radius: 8px; color: #c7cad3; font-size: 13px; text-decoration: none; display: flex; gap: 6px; align-items: center">Alarms <span style="font-family: Montserrat, sans-serif; background: #f97316; color: #1a0d00; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 6px">2</span></a>
+    <a href="#" style="padding: 9px 10px; border-radius: 8px; color: #c7cad3; font-size: 13px; text-decoration: none">Activity</a>
+    <a href="#" style="padding: 9px 10px; border-radius: 8px; color: #c7cad3; font-size: 13px; text-decoration: none">Sites</a>
+    <a href="#" style="padding: 9px 10px; border-radius: 8px; color: #c7cad3; font-size: 13px; text-decoration: none">Team</a>
+  </nav>
+  <div style="padding: 14px; display: flex; flex-direction: column; gap: 12px; flex: 1">
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+      <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 10px; padding: 10px 8px"><div style="font-size: 11px; color: #c7cad3">SITES</div><div style="font-family: Montserrat, sans-serif; font-size: 24px; font-weight: 700">3</div></div>
+      <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 10px; padding: 10px 8px"><div style="font-size: 11px; color: #c7cad3">OK</div><div style="font-family: Montserrat, sans-serif; font-size: 24px; font-weight: 700; color: {{accent}}">2</div></div>
+      <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 10px; padding: 10px 8px"><div style="font-size: 11px; color: #c7cad3">ALARMS</div><div style="font-family: Montserrat, sans-serif; font-size: 24px; font-weight: 700; color: #fb923c">2</div></div>
+      <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 10px; padding: 10px 8px"><div style="font-size: 11px; color: #c7cad3">FORCED</div><div style="font-family: Montserrat, sans-serif; font-size: 24px; font-weight: 700; color: #facc15">1</div></div>
+    </div>
+    <div style="background: #2a1606; border: 1px solid #9a3412; border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: center">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: #fb923c; box-shadow: 0 0 10px #fb923c"></span>
+      <div style="flex: 1; font-size: 13px"><div style="font-weight: 600; color: #fed7aa">Nick's Shed · C2 overload trip</div><div style="color: #fdba74; font-size: 12px">C1 took over as lead · 8 min ago</div></div>
+      <a href="#" style="font-size: 12px">View</a>
+    </div>
+    <div style="font-size: 12px; color: #c7cad3; letter-spacing: 0.6px; margin-top: 4px">SITES</div>
+    <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #fb923c; box-shadow: 0 0 8px #fb923c"></span><div style="flex: 1; font-weight: 600">Nick's Shed</div><span style="font-family: Montserrat, sans-serif; font-size: 11px; font-weight: 700; color: #1a1300; background: #facc15; border-radius: 6px; padding: 2px 7px">1 FORCED</span></div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-family: Montserrat, sans-serif">
+        <div><div style="font-family: 'Open Sans', sans-serif; font-size: 11px; color: #c7cad3">Air</div><div style="font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 700">7.4<span style="font-size: 12px; color: #c7cad3"> bar</span></div></div>
+        <div><div style="font-family: 'Open Sans', sans-serif; font-size: 11px; color: #c7cad3">Tank</div><div style="font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 700">68<span style="font-size: 12px; color: #c7cad3"> %</span></div></div>
+        <div><div style="font-family: 'Open Sans', sans-serif; font-size: 11px; color: #c7cad3">Lead</div><div style="font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 700">C1</div></div>
+      </div>
+    </div>
+    <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{accent}}; box-shadow: 0 0 8px {{accent}}"></span><div style="flex: 1; font-weight: 600">Nick's House</div><span style="font-size: 12px; color: #c7cad3">OK</span></div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-family: Montserrat, sans-serif">
+        <div><div style="font-family: 'Open Sans', sans-serif; font-size: 11px; color: #c7cad3">Solar</div><div style="font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 700">6.2<span style="font-size: 12px; color: #c7cad3"> kW</span></div></div>
+        <div><div style="font-family: 'Open Sans', sans-serif; font-size: 11px; color: #c7cad3">Today</div><div style="font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 700; width: 129px; height: 85px">31<span style="font-size: 12px; color: #c7cad3"> kWh</span></div></div>
+        <div><div style="font-family: 'Open Sans', sans-serif; font-size: 11px; color: #c7cad3">Lights on</div><div style="font-family: Montserrat, sans-serif; font-size: 18px; font-weight: 700">4</div></div>
+      </div>
+    </div>
+    <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 10px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #fb923c; box-shadow: 0 0 8px #fb923c"></span><div style="flex: 1; font-weight: 600">Saturn Depot</div><span style="font-size: 12px; color: #fdba74">Gate open</span></div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-family: Montserrat, sans-serif">
+        <div><div style="font-family: 'Open Sans', sans-serif; font-size: 11px; color: #c7cad3">Alarm</div><div style="font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 700">ARMED</div></div>
+        <div><div style="font-family: 'Open Sans', sans-serif; font-size: 11px; color: #c7cad3">Yard</div><div style="font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 700">ON</div></div>
+        <div><div style="font-family: 'Open Sans', sans-serif; font-size: 11px; color: #c7cad3">Power</div><div style="font-family: Montserrat, sans-serif; font-size: 16px; font-weight: 700">1.8<span style="font-size: 12px; color: #c7cad3"> kW</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#22c55e","options":["#22c55e","#38bdf8","#a3e635"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#22c55e' };
+  }
+}
+</script>
+</body>
+</html>

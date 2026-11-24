@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clean Light dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#6c2b9e}a:hover{color:#4a1d6e}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f4f5f7; color: #0b103d; font-family: 'Open Sans', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="background: #ffffff; border-bottom: 3px solid #6c2b9e">
+    <div style="padding: 16px 18px 10px; display: flex; align-items: center; gap: 12px">
+      <img src="/_blob/1d25629c100d3d45fb12e1a65293d1e1" alt="Saturn Electrical" style="width: 160px; height: auto; display: block">
+      <div style="flex: 1"></div>
+      <button aria-label="Switch to dark mode" style="display: flex; align-items: center; gap: 2px; background: #e8eaef; border: 1px solid #c7cad3; border-radius: 999px; padding: 3px; cursor: pointer"><span style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #ffffff; color: #0b103d; box-shadow: 0 1px 2px rgba(0,0,0,0.12)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></span><span style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #4a4f63"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></span></button>
+      <button aria-label="Settings" style="width: 40px; height: 40px; border-radius: 10px; background: #ffffff; border: 1px solid #c7cad3; color: #0b103d; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+    </div>
+    <div style="padding: 0 18px 4px; display: flex; align-items: center; gap: 8px"><span style="font-family: Montserrat, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; color: #6c2b9e">COMMAND CENTER</span><span style="font-size: 12px; color: #4a4f63">· Good morning, Nick</span></div>
+    <nav style="display: flex; gap: 18px; padding: 0 18px">
+      <a href="#" style="padding: 10px 0; color: #0b103d; font-size: 14px; font-weight: 600; text-decoration: none; border-bottom: 3px solid {{accent}}">Overview</a>
+      <a href="#" style="padding: 10px 0; color: #4a4f63; font-size: 14px; text-decoration: none">Alarms (2)</a>
+      <a href="#" style="padding: 10px 0; color: #4a4f63; font-size: 14px; text-decoration: none">Activity</a>
+      <a href="#" style="padding: 10px 0; color: #4a4f63; font-size: 14px; text-decoration: none">Sites</a>
+      <a href="#" style="padding: 10px 0; color: #4a4f63; font-size: 14px; text-decoration: none">Team</a>
+    </nav>
+  </div>
+  <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: 1">
+    <div style="background: #ffffff; border: 1px solid #c7cad3; border-radius: 16px; padding: 16px">
+      <div style="font-size: 13px; color: #4a4f63">Right now</div>
+      <div style="font-family: Montserrat, sans-serif; font-size: 24px; font-weight: 700; margin-top: 2px">2 things need you</div>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px">
+        <div style="display: flex; align-items: center; gap: 10px; background: #fbece3; border-radius: 10px; padding: 10px 12px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #c2410c"></span><div style="flex: 1; font-size: 13px"><span style="font-weight: 600">Shed</span> · C2 overload trip</div><span style="font-size: 12px; color: #6b4a33">8 min</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #fbf3db; border-radius: 10px; padding: 10px 12px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8a6100"></span><div style="flex: 1; font-size: 13px"><span style="font-weight: 600">Depot</span> · Gate open after hours</div><span style="font-size: 12px; color: #6b5517">22 min</span></div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center"><div style="font-family: Montserrat, sans-serif; font-size: 15px; font-weight: 700; flex: 1">Sites</div><a href="#" style="font-size: 13px; text-decoration: none">+ New site</a></div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <div style="background: #ffffff; border: 1px solid #c7cad3; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #c2410c"></span><span style="font-size: 12px; color: #9a3412; font-weight: 600">Attention</span></div>
+        <div style="font-family: Montserrat, sans-serif; font-weight: 700">Nick's Shed</div>
+        <div style="font-family: Montserrat, sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.5px">7.4 <span style="font-size: 13px; font-weight: 500; color: #4a4f63">bar</span></div>
+        <div style="font-size: 12px; color: #4a4f63">Tank 68 % · 1 forced</div>
+      </div>
+      <div style="background: #ffffff; border: 1px solid #c7cad3; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #15803d"></span><span style="font-size: 12px; color: #166534; font-weight: 600">OK</span></div>
+        <div style="font-family: Montserrat, sans-serif; font-weight: 700">Nick's House</div>
+        <div style="font-family: Montserrat, sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.5px">6.2 <span style="font-size: 13px; font-weight: 500; color: #4a4f63">kW solar</span></div>
+        <div style="font-size: 12px; color: #4a4f63">31 kWh today</div>
+      </div>
+      <div style="background: #ffffff; border: 1px solid #c7cad3; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8a6100"></span><span style="font-size: 12px; color: #7a5600; font-weight: 600">Attention</span></div>
+        <div style="font-family: Montserrat, sans-serif; font-weight: 700">Saturn Depot</div>
+        <div style="font-family: Montserrat, sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.5px">Armed</div>
+        <div style="font-size: 12px; color: #4a4f63">Gate open · yard lights on</div>
+      </div>
+      <div style="background: transparent; border: 1.5px dashed #c7cad3; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #4a4f63">
+        <div style="font-size: 26px; line-height: 1">+</div>
+        <div style="font-size: 13px; font-weight: 600">Add a site</div>
+      </div>
+    </div>
+    <div style="font-family: Montserrat, sans-serif; font-size: 15px; font-weight: 700; margin-top: 4px">Latest activity</div>
+    <div style="background: #ffffff; border: 1px solid #c7cad3; border-radius: 14px; padding: 4px 14px">
+      <div style="padding: 10px 0; border-bottom: 1px solid #e8eaef; font-size: 13px"><span style="font-weight: 600">Nick</span> forced DQ1 C1 drain ON · Shed<div style="font-size: 12px; color: #4a4f63">7 min ago</div></div>
+      <div style="padding: 10px 0; font-size: 13px"><span style="font-weight: 600">PLC</span> swapped lead to C1 · Shed<div style="font-size: 12px; color: #4a4f63">8 min ago</div></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6c2b9e","options":["#6c2b9e","#8134be","#0b103d"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#6c2b9e' };
+  }
+}
+</script>
+</body>
+</html>

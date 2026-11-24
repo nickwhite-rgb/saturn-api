@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Control Room I/O page</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#cbb3e6}a:hover{color:#ffffff}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #07091f; color: #e8eaef; font-family: 'Open Sans', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="padding: 16px 16px 8px; display: flex; align-items: center; gap: 10px">
+    <a href="#" aria-label="Back" style="color: #e8eaef; font-size: 24px; text-decoration: none; padding: 0 6px 0 0">‹</a>
+    <img src="/_blob/4015ae156cd4ee44fc2fd768af8c10a7" alt="Saturn Electrical" style="width: 40px; height: auto; display: block">
+    <div style="flex: 1"><div style="font-family: Montserrat, sans-serif; font-size: 17px; font-weight: 700">Nick's Shed</div><div style="font-size: 12px; color: #c7cad3">PLC online · polling every 2 s</div></div>
+    <button aria-label="Switch to light mode" style="display: flex; align-items: center; gap: 2px; background: #141966; border: 1px solid #2e3480; border-radius: 999px; padding: 3px; cursor: pointer"><span style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #c7cad3"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></span><span style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e8eaef; color: #07091f"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></span></button>
+    <button aria-label="Settings" style="width: 40px; height: 40px; border-radius: 10px; background: #141966; border: 1px solid #2e3480; color: #e8eaef; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+  </div>
+  <nav style="display: flex; gap: 4px; padding: 0 12px 10px; border-bottom: 3px solid #6c2b9e">
+    <a href="#" style="padding: 8px 10px; color: #c7cad3; font-size: 13px; text-decoration: none">Overview</a>
+    <a href="#" style="padding: 8px 12px; border-radius: 8px; background: #6c2b9e; color: #fff; font-size: 13px; font-weight: 600; text-decoration: none">I/O</a>
+    <a href="#" style="padding: 8px 10px; color: #c7cad3; font-size: 13px; text-decoration: none">Live</a>
+    <a href="#" style="padding: 8px 10px; color: #c7cad3; font-size: 13px; text-decoration: none">Ask AI</a>
+    <a href="#" style="padding: 8px 10px; color: #c7cad3; font-size: 13px; text-decoration: none">Log</a>
+  </nav>
+  <div style="margin: 12px 12px 4px; background: repeating-linear-gradient(135deg, #3b2a00 0 12px, #2e2100 12px 24px); border: 1px solid #facc15; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px">
+    <div style="flex: 1"><div style="font-family: Montserrat, sans-serif; font-weight: 700; color: #fde68a; font-size: 14px">FORCES ACTIVE · 1</div><div style="font-family: Montserrat, sans-serif; color: #fde68a; font-size: 12px">Auto-clear in 52:10 · by Nick</div></div>
+    <button style="font-family: Montserrat, sans-serif; background: #facc15; color: #1a1300; border: 0; border-radius: 8px; padding: 10px 12px; font-weight: 700; font-size: 13px; min-height: 44px">Clear all</button>
+  </div>
+  <div style="padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1">
+    <div style="font-size: 11px; color: #c7cad3; letter-spacing: 0.6px; padding: 6px 2px 2px">DIGITAL INPUTS</div>
+    <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 10px; padding: 4px 10px">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1d2366"><span style="width: 12px; height: 12px; border-radius: 50%; background: {{accent}}; box-shadow: 0 0 8px {{accent}}"></span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: #c7cad3; width: 34px">DI0</span><span style="flex: 1; font-size: 13px">C1 in Auto</span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: {{accent}}">ON</span></div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1d2366"><span style="width: 12px; height: 12px; border-radius: 50%; background: {{accent}}; box-shadow: 0 0 8px {{accent}}"></span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: #c7cad3; width: 34px">DI1</span><span style="flex: 1; font-size: 13px">C1 running</span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: {{accent}}">ON</span></div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1d2366"><span style="width: 12px; height: 12px; border-radius: 50%; background: #2e3480"></span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: #c7cad3; width: 34px">DI5</span><span style="flex: 1; font-size: 13px">C2 overload OK</span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: #fb923c">TRIP</span></div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: {{accent}}; box-shadow: 0 0 8px {{accent}}"></span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: #c7cad3; width: 34px">DI8</span><span style="flex: 1; font-size: 13px">Tank above low float</span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: {{accent}}">ON</span></div>
+    </div>
+    <div style="font-size: 11px; color: #c7cad3; letter-spacing: 0.6px; padding: 8px 2px 2px">DIGITAL OUTPUTS</div>
+    <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 10px; padding: 4px 10px">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1d2366"><span style="width: 12px; height: 12px; border-radius: 50%; background: {{accent}}; box-shadow: 0 0 8px {{accent}}"></span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: #c7cad3; width: 34px">DQ0</span><span style="flex: 1; font-size: 13px">C1 run</span>
+        <div style="display: flex; border: 1px solid #2e3480; border-radius: 8px; overflow: hidden"><button style="background: #6c2b9e; color: #fff; border: 0; padding: 8px 9px; font-size: 12px; font-weight: 600">Auto</button><button style="background: transparent; color: #c7cad3; border: 0; padding: 8px 9px; font-size: 12px">Off</button><button style="background: transparent; color: #c7cad3; border: 0; padding: 8px 9px; font-size: 12px">On</button></div></div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1d2366"><span style="width: 12px; height: 12px; border-radius: 50%; background: #facc15; box-shadow: 0 0 8px #facc15"></span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: #c7cad3; width: 34px">DQ1</span><div style="flex: 1"><div style="font-size: 13px">C1 drain</div><div style="font-size: 11px; color: #fde68a">FORCED ON · logic: off</div></div>
+        <div style="display: flex; border: 1px solid #2e3480; border-radius: 8px; overflow: hidden"><button style="background: transparent; color: #c7cad3; border: 0; padding: 8px 9px; font-size: 12px">Auto</button><button style="background: transparent; color: #c7cad3; border: 0; padding: 8px 9px; font-size: 12px">Off</button><button style="font-family: Montserrat, sans-serif; background: #facc15; color: #1a1300; border: 0; padding: 8px 9px; font-size: 12px; font-weight: 700">On</button></div></div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0"><span style="width: 12px; height: 12px; border-radius: 50%; background: #2e3480"></span><span style="font-family: Montserrat, sans-serif; font-size: 12px; color: #c7cad3; width: 34px">DQ2</span><span style="flex: 1; font-size: 13px">C2 run</span>
+        <div style="display: flex; border: 1px solid #2e3480; border-radius: 8px; overflow: hidden"><button style="background: #6c2b9e; color: #fff; border: 0; padding: 8px 9px; font-size: 12px; font-weight: 600">Auto</button><button style="background: transparent; color: #c7cad3; border: 0; padding: 8px 9px; font-size: 12px">Off</button><button style="background: transparent; color: #c7cad3; border: 0; padding: 8px 9px; font-size: 12px">On</button></div></div>
+    </div>
+    <div style="font-size: 11px; color: #c7cad3; letter-spacing: 0.6px; padding: 8px 2px 2px">ANALOG</div>
+    <div style="background: #0b103d; border: 1px solid #1d2366; border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 10px">
+      <span style="font-family: Montserrat, sans-serif; font-size: 12px; color: #c7cad3; width: 34px">AI0</span>
+      <div style="flex: 1"><div style="font-size: 13px">Air pressure</div><div style="height: 6px; background: #1d2366; border-radius: 3px; margin-top: 6px"><div style="width: 46%; height: 6px; background: {{accent}}; border-radius: 3px"></div></div></div>
+      <div style="font-family: Montserrat, sans-serif; font-size: 20px; font-weight: 700">7.4<span style="font-size: 11px; color: #c7cad3"> bar</span></div>
+      <button style="background: transparent; color: #cbb3e6; border: 1px solid #2e3480; border-radius: 8px; padding: 8px 10px; font-size: 12px; min-height: 36px">Force</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#22c55e","options":["#22c55e","#38bdf8","#a3e635"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#22c55e' };
+  }
+}
+</script>
+</body>
+</html>

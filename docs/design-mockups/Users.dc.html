@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Users and permissions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&amp;family=Open+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#6c2b9e}a:hover{color:#4a1d6e}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #f4f5f7; color: #0b103d; font-family: 'Open Sans', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="background: #ffffff; border-bottom: 3px solid #6c2b9e; padding: 14px 16px; display: flex; align-items: center; gap: 10px">
+    <a href="Settings.dc.html" aria-label="Back to settings" style="color: #0b103d; font-size: 24px; text-decoration: none; padding-right: 4px">‹</a>
+      <img src="/_blob/c305e97947a5dbe4a270afd101043124" alt="Saturn Electrical" style="width: 40px; height: auto; display: block">
+    <div style="flex: 1"><div style="font-family: Montserrat, sans-serif; font-size: 17px; font-weight: 700">Users &amp; permissions</div><div style="font-size: 12px; color: #4a4f63">Super admin only</div></div>
+  </div>
+  <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+    <button style="font-family: Montserrat, sans-serif; background: {{accent}}; color: #ffffff; border: 0; border-radius: 12px; padding: 14px; font-weight: 700; font-size: 15px; min-height: 48px">+ Add user</button>
+    <div style="background: #f3ecfa; border-radius: 12px; padding: 10px 12px; font-size: 13px; color: #4a1d6e">New users start with <strong>no sites</strong> and <strong>no adjust rights</strong>. You tick what they get.</div>
+    <label style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #4a4f63">Search</span><input type="search" placeholder="Name or role" style="border: 1px solid #c7cad3; border-radius: 10px; padding: 11px 12px; font-size: 14px; background: #fff; min-height: 44px; box-sizing: border-box"></label>
+    <div style="background: #ffffff; border: 1px solid #c7cad3; border-radius: 14px; overflow: hidden">
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; color: #0b103d; text-decoration: none; border-bottom: 1px solid #e8eaef">
+        <div style="font-family: Montserrat, sans-serif; width: 40px; height: 40px; border-radius: 50%; background: #0b103d; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">NW</div>
+        <div style="flex: 1"><div style="font-weight: 600">Nick White</div><div style="font-size: 12px; color: #4a4f63">All sites · everything</div></div>
+        <span style="font-family: Montserrat, sans-serif; font-size: 11px; font-weight: 700; color: #fff; background: #0b103d; border-radius: 999px; padding: 3px 8px">SUPER ADMIN</span>
+      </a>
+      <a href="UserAccess.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; color: #0b103d; text-decoration: none; border-bottom: 1px solid #e8eaef">
+        <div style="font-family: Montserrat, sans-serif; width: 40px; height: 40px; border-radius: 50%; background: #ece2f7; color: #4a1d6e; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">L</div>
+        <div style="flex: 1"><div style="font-weight: 600">Lachlan</div><div style="font-size: 12px; color: #4a4f63">Sees 2 sites · adjusts 1</div></div>
+        <span style="font-size: 11px; font-weight: 600; color: #2c3148; background: #e8eaef; border-radius: 999px; padding: 3px 8px">USER</span>
+        <span style="color: #8f93a3; font-size: 18px">›</span>
+      </a>
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; color: #0b103d; text-decoration: none; border-bottom: 1px solid #e8eaef">
+        <div style="font-family: Montserrat, sans-serif; width: 40px; height: 40px; border-radius: 50%; background: #ece2f7; color: #4a1d6e; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">A</div>
+        <div style="flex: 1"><div style="font-weight: 600">[Apprentice]</div><div style="font-size: 12px; color: #4a4f63">Sees 1 site · view only</div></div>
+        <span style="font-size: 11px; font-weight: 600; color: #2c3148; background: #e8eaef; border-radius: 999px; padding: 3px 8px">USER</span>
+        <span style="color: #8f93a3; font-size: 18px">›</span>
+      </a>
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; color: #0b103d; text-decoration: none; border-bottom: 1px solid #e8eaef">
+        <div style="font-family: Montserrat, sans-serif; width: 40px; height: 40px; border-radius: 50%; background: #fbece3; color: #7a2e0e; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">N</div>
+        <div style="flex: 1"><div style="font-weight: 600">[New starter]</div><div style="font-size: 12px; color: #9a3412">No access yet</div></div>
+        <span style="font-size: 11px; font-weight: 600; color: #2c3148; background: #e8eaef; border-radius: 999px; padding: 3px 8px">USER</span>
+        <span style="color: #8f93a3; font-size: 18px">›</span>
+      </a>
+      <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; color: #8f93a3; text-decoration: none">
+        <div style="font-family: Montserrat, sans-serif; width: 40px; height: 40px; border-radius: 50%; background: #e8eaef; color: #8f93a3; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">F</div>
+        <div style="flex: 1"><div style="font-weight: 600; color: #4a4f63">[Former staff]</div><div style="font-size: 12px; color: #4a4f63">Switched off · can't log in</div></div>
+        <span style="color: #8f93a3; font-size: 18px">›</span>
+      </a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#6c2b9e","options":["#6c2b9e","#8134be","#0b103d"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#6c2b9e' };
+  }
+}
+</script>
+</body>
+</html>
