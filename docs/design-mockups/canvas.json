@@ -2,25 +2,129 @@
   "v": 3,
   "attachments": {},
   "boards": {
-    "Main.dc.html": { "h": 844, "title": "Dark mode – Dashboard", "w": 390, "x": 0, "y": 300 },
-    "ControlRoom-IO.dc.html": { "h": 844, "title": "Dark mode – I/O page", "w": 390, "x": 470, "y": 300 },
-    "Clean-Overview.dc.html": { "h": 844, "title": "Light mode – Dashboard", "w": 390, "x": 0, "y": 1490 },
-    "Clean-IO.dc.html": { "h": 844, "title": "Light mode – I/O page", "w": 390, "x": 470, "y": 1490 },
-    "Settings.dc.html": { "h": 844, "title": "Settings", "w": 390, "x": 0, "y": 2680 },
-    "Users.dc.html": { "h": 844, "title": "Users (super admin)", "w": 390, "x": 470, "y": 2680 },
-    "UserAccess.dc.html": { "h": 1100, "title": "User access – tick and flick", "w": 390, "x": 940, "y": 2680 }
+    "Main.dc.html": {
+      "h": 844,
+      "title": "Dark mode \u2013 Dashboard",
+      "w": 390,
+      "x": 0,
+      "y": 300,
+      "is_interactive": true
+    },
+    "ControlRoom-IO.dc.html": {
+      "h": 844,
+      "title": "Dark mode \u2013 I/O page",
+      "w": 390,
+      "x": 470,
+      "y": 300,
+      "is_interactive": true
+    },
+    "Clean-Overview.dc.html": {
+      "h": 844,
+      "title": "Light mode \u2013 Dashboard",
+      "w": 390,
+      "x": 0,
+      "y": 1490,
+      "is_interactive": true
+    },
+    "Clean-IO.dc.html": {
+      "h": 844,
+      "title": "Light mode \u2013 I/O page",
+      "w": 390,
+      "x": 470,
+      "y": 1490,
+      "is_interactive": true
+    },
+    "Settings.dc.html": {
+      "h": 844,
+      "title": "Settings",
+      "w": 390,
+      "x": 0,
+      "y": 2680,
+      "is_interactive": true
+    },
+    "Users.dc.html": {
+      "h": 844,
+      "title": "Users (super admin)",
+      "w": 390,
+      "x": 470,
+      "y": 2680,
+      "is_interactive": true
+    },
+    "UserAccess.dc.html": {
+      "h": 1100,
+      "title": "User access \u2013 tick and flick",
+      "w": 390,
+      "x": 940,
+      "y": 2680,
+      "is_interactive": true
+    }
   },
-  "createdOnFiles": { "at": "2026-11-23T02:10:00Z", "v": 1 },
+  "createdOnFiles": {
+    "at": "2026-11-23T02:10:00Z",
+    "v": 1
+  },
   "designSystems": [],
-  "launch": { "view": "canvas" },
-  "noteOrder": ["titleA", "titleB", "titleC", "noteSample"],
-  "notes": {
-    "noteSample": { "fill": "orange", "size": 24, "text": "Sample data only – readings, alarms and names are placeholders to show the look.", "w": 260, "x": 940, "y": 300 },
-    "titleA": { "kind": "title1", "maxW": 860, "text": "Dark mode (design 1)", "w": 240, "x": 0, "y": 40 },
-    "titleB": { "kind": "title1", "maxW": 860, "text": "Light mode (design 2)", "w": 240, "x": 0, "y": 1230 },
-    "titleC": { "kind": "title1", "maxW": 1330, "text": "Settings & users (super admin)", "w": 240, "x": 0, "y": 2420 }
+  "launch": {
+    "view": "canvas"
   },
-  "order": ["Main.dc.html", "ControlRoom-IO.dc.html", "Clean-Overview.dc.html", "Clean-IO.dc.html", "Settings.dc.html", "Users.dc.html", "UserAccess.dc.html"],
+  "noteOrder": [
+    "titleA",
+    "titleB",
+    "titleC",
+    "noteSample",
+    "noteTap"
+  ],
+  "notes": {
+    "noteSample": {
+      "fill": "orange",
+      "size": 24,
+      "text": "Sample data only \u2013 readings, alarms and names are placeholders to show the look.",
+      "w": 260,
+      "x": 940,
+      "y": 300
+    },
+    "titleA": {
+      "kind": "title1",
+      "maxW": 860,
+      "text": "Dark mode (design 1)",
+      "w": 240,
+      "x": 0,
+      "y": 40
+    },
+    "titleB": {
+      "kind": "title1",
+      "maxW": 860,
+      "text": "Light mode (design 2)",
+      "w": 240,
+      "x": 0,
+      "y": 1230
+    },
+    "titleC": {
+      "kind": "title1",
+      "maxW": 1330,
+      "text": "Settings & users (super admin)",
+      "w": 240,
+      "x": 0,
+      "y": 2420
+    },
+    "noteTap": {
+      "fill": "purple",
+      "size": 24,
+      "text": "Tap \u25b6 Play on any screen: the sun/moon flips light/dark, the gear opens Settings, tap the Shed to see its I/O page.",
+      "w": 260,
+      "x": 940,
+      "y": 700
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "ControlRoom-IO.dc.html",
+    "Clean-Overview.dc.html",
+    "Clean-IO.dc.html",
+    "Settings.dc.html",
+    "Users.dc.html",
+    "UserAccess.dc.html"
+  ],
   "pages": [],
-  "title": "Saturn Command Center – Look Options"
+  "title": "Saturn Command Center \u2013 Look Options"
 }
